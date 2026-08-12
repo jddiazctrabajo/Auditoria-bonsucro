@@ -1,39 +1,38 @@
 # -*- coding: utf-8 -*-
-"""
-==============================================================
-Proyecto Fertilización
-core/procesador.py
-==============================================================
 
+"""
 Responsabilidad
 ---------------
+
 Orquestar todo el proceso de consolidación.
 
 NO realiza cálculos directamente.
-NO consulta Excel directamente (usa ExcelReader).
+NO consulta Excel directamente.
+Utiliza ExcelReader, Maestro y Prontuario.
 
-Flujo
+Flujo:
 
 Leer archivos
-    ↓
+↓
 Homologar
-    ↓
+↓
 Completar desde Prontuario
-    ↓
+↓
 Completar desde Maestro
-    ↓
+↓
 Calcular
-    ↓
+↓
 Validar
-    ↓
+↓
 Devolver DataFrames
-
-==============================================================
 """
 
 from pathlib import Path
-import pandas as pd
+import unicodedata
+import re
+
 import numpy as np
+import pandas as pd
 
 from services.excel_reader import ExcelReader
 from core.homologacion import Homologador
@@ -132,19 +131,23 @@ class Procesador:
 
                 )
 
-                print(df.columns.tolist())
+                print(
+                    "\n=============================================="
+                )
 
-                print(df[
-                    [
-                        "UNIDADES - N",
-                        "UNIDADES - P",
-                        "UNIDADES - K",
-                        "MENORES"
-                    ]
-                ].head(10))
-                # --------------------------
+                print(
+                    "ARCHIVO:",
+                    archivo.name
+                )
+
+                print(
+                    "COLUMNAS:",
+                    df.columns.tolist()
+                )
+
+                # ------------------------------------------
                 # Trazabilidad
-                # --------------------------
+                # ------------------------------------------
 
                 df["RAZON_SOCIAL"] = archivo.parent.name
 
@@ -184,9 +187,9 @@ class Procesador:
 
         )
 
-        consolidado = consolidado.reset_index(drop=True)
-
-        # Estado inicial
+        consolidado = consolidado.reset_index(
+            drop=True
+        )
 
         consolidado["ESTADO"] = "OK"
 
@@ -199,66 +202,164 @@ class Procesador:
     # ==========================================================
 
     def _homologar(self, df):
+
         df = self.homologador.dataframe(df)
 
-        # Normalizar columnas igual que prontuario y maestro
-        import unicodedata
-        
+        # ------------------------------------------------------
+        # Normalizar texto
+        # ------------------------------------------------------
+
         def normalizar_texto(texto):
-            """Mismo método que Prontuario y Maestro"""
+
             if pd.isna(texto):
+
                 return ""
+
             texto = str(texto).upper().strip()
-            texto = unicodedata.normalize("NFKD", texto)
-            texto = "".join(c for c in texto if not unicodedata.combining(c))
-            texto = " ".join(texto.split())
+
+            texto = unicodedata.normalize(
+                "NFKD",
+                texto
+            )
+
+            texto = "".join(
+                c
+                for c in texto
+                if not unicodedata.combining(c)
+            )
+
+            texto = " ".join(
+                texto.split()
+            )
+
             return texto
 
-        # Normalizar campos clave para el merge
-        columnas_normalizar = ["HACIENDA", "SUERTE", "PRODUCTO"]
-        
-        for col in columnas_normalizar:
-            if col in df.columns:
-                print(f"DEBUG: Normalizando {col}")
-                print(f"  Antes: {df[col].head(3).tolist()}")
-                df[col] = df[col].apply(normalizar_texto)
-                print(f"  Después: {df[col].head(3).tolist()}")
+        # ------------------------------------------------------
+        # Normalizar campos clave
+        # ------------------------------------------------------
 
-        # Normalizar nombres de columnas: eliminar espacios, unificar guiones y colapsar espacios, manejar caracteres invisibles
-        import re
-        def _clean_name(col):
-            name = col.strip()
-            # Eliminar caracteres invisibles (zero‑width spaces, etc.)
-            name = re.sub(r'[\u200B-\u200D\uFEFF]', '', name)
-            # Reemplazar cualquier tipo de guion largo por '-'
-            name = re.sub(r'[\u2010-\u2015]', '-', name)
-            # Normalizar espacios alrededor del guion
-            name = re.sub(r'\s*-\s*', ' - ', name)
-            # Reemplazar cualquier carácter de espacio Unicode (incluido \u00A0) por espacio simple
-            name = re.sub(r"[\s\u00A0]+", " ", name)
-            # Colapsar múltiples espacios en uno
-            name = re.sub(r"\s+", " ", name)
+        columnas_normalizar = [
+
+            "HACIENDA",
+            "SUERTE",
+            "PRODUCTO"
+
+        ]
+
+        for col in columnas_normalizar:
+
+            if col in df.columns:
+
+                df[col] = df[col].apply(
+                    normalizar_texto
+                )
+
+        # ------------------------------------------------------
+        # Normalizar nombres de columnas
+        # ------------------------------------------------------
+
+        def limpiar_nombre(col):
+
+            name = str(col).strip()
+
+            name = re.sub(
+                r'[\u200B-\u200D\uFEFF]',
+                '',
+                name
+            )
+
+            name = re.sub(
+                r'[\u2010-\u2015]',
+                '-',
+                name
+            )
+
+            name = re.sub(
+                r'\s*-\s*',
+                ' - ',
+                name
+            )
+
+            name = re.sub(
+                r"[\s\u00A0]+",
+                " ",
+                name
+            )
+
+            name = re.sub(
+                r"\s+",
+                " ",
+                name
+            )
+
             return name
-        df.rename(columns=lambda c: _clean_name(c), inplace=True)
-        # Reconocer y renombrar variantes de columnas de unidades (ej. "UNIDADES - N (g)" o sin guion)
-        import re
-        def _norm(col):
-            # Remove non‑alphanumeric characters and uppercase
-            return re.sub(r"[^A-Za-z0-9]", "", col).upper()
-        for expected in ["UNIDADES - N", "UNIDADES - P", "UNIDADES - K", "UNIDADES - S", "UNIDADES - MENORES"]:
+
+        df.rename(
+            columns=lambda c: limpiar_nombre(c),
+            inplace=True
+        )
+
+        # ------------------------------------------------------
+        # Reconocer variantes de columnas de unidades
+        # ------------------------------------------------------
+
+        def normalizar_columna(col):
+
+            return re.sub(
+                r"[^A-Za-z0-9]",
+                "",
+                str(col)
+            ).upper()
+
+        unidades_esperadas = [
+
+            "UNIDADES - N",
+            "UNIDADES - P",
+            "UNIDADES - K",
+            "UNIDADES - S",
+            "UNIDADES - MENORES"
+
+        ]
+
+        for expected in unidades_esperadas:
+
             if expected in df.columns:
+
                 continue
-            elem = expected.split(" - ")[1]
-            target_norm = _norm(f"UNIDADES{elem}")
+
+            elemento = expected.split(
+                " - "
+            )[1]
+
+            objetivo = normalizar_columna(
+                f"UNIDADES{elemento}"
+            )
+
             for col in df.columns:
-                if _norm(col) == target_norm:
-                    df.rename(columns={col: expected}, inplace=True)
+
+                if (
+                    normalizar_columna(col)
+                    == objetivo
+                ):
+
+                    df.rename(
+                        columns={
+                            col: expected
+                        },
+                        inplace=True
+                    )
+
                     break
-        # Asegurar que existen todas las columnas de unidades esperadas
-        unidades_cols = ["UNIDADES - N", "UNIDADES - P", "UNIDADES - K", "UNIDADES - S", "UNIDADES - MENORES"]
-        for uc in unidades_cols:
-            if uc not in df.columns:
-                df[uc] = pd.NA
+
+        # ------------------------------------------------------
+        # Asegurar columnas de unidades
+        # ------------------------------------------------------
+
+        for columna in unidades_esperadas:
+
+            if columna not in df.columns:
+
+                df[columna] = pd.NA
 
         return df
 
@@ -270,171 +371,183 @@ class Procesador:
 
         prontuario = self.prontuario.df.copy()
 
-        # Renombrar columnas para evitar conflictos
-        prontuario = prontuario.rename(columns={
+        prontuario = prontuario.rename(
+            columns={
 
-            "AREA": "AREA_PRONTUARIO",
+                "AREA":
+                    "AREA_PRONTUARIO",
 
-            "VARIEDAD": "VARIEDAD_PRONTUARIO",
+                "VARIEDAD":
+                    "VARIEDAD_PRONTUARIO",
 
-            "ULT_CORTE": "ULT_CORTE_PRONTUARIO",
+                "ULT_CORTE":
+                    "ULT_CORTE_PRONTUARIO",
 
-            "TCH ACTUAL": "TCH_ACTUAL_PRONTUARIO"
+                "TCH ACTUAL":
+                    "TCH_ACTUAL_PRONTUARIO"
 
-        })
+            }
+        )
 
         columnas = [
 
             "HACIENDA",
-
             "SUERTE",
-
             "AREA_PRONTUARIO",
-
             "VARIEDAD_PRONTUARIO",
-
             "ULT_CORTE_PRONTUARIO",
-
             "TCH_ACTUAL_PRONTUARIO"
 
         ]
 
         prontuario = prontuario[columnas]
 
-        print("\nDEBUG - Antes del merge con prontuario:")
-        print(f"  Registros en df: {len(df)}")
-        print(f"  Haciendas únicas en df: {df['HACIENDA'].nunique()}")
-        print(f"  Haciendas en prontuario: {prontuario['HACIENDA'].nunique()}")
-        print(f"  Primeras haciendas en df: {df['HACIENDA'].head(3).tolist()}")
-        print(f"  Primeras haciendas en prontuario: {prontuario['HACIENDA'].head(3).tolist()}")
-
         df = df.merge(
 
             prontuario,
 
-            on=["HACIENDA", "SUERTE"],
+            on=[
+                "HACIENDA",
+                "SUERTE"
+            ],
 
             how="left"
 
         )
 
-        print("\nDEBUG - Después del merge con prontuario:")
-        print(f"  Registros con AREA_PRONTUARIO: {df['AREA_PRONTUARIO'].notna().sum()}")
-        print(f"  Registros sin AREA_PRONTUARIO: {df['AREA_PRONTUARIO'].isna().sum()}")
-
-        # ---------------------------------------------------
-        # Completar área solamente cuando venga vacía
-        # ---------------------------------------------------
+        # ------------------------------------------------------
+        # Completar área
+        # ------------------------------------------------------
 
         if "AREA" in df.columns:
 
-            df["AREA"] = df["AREA"].fillna(df["AREA_PRONTUARIO"])
+            df["AREA"] = df["AREA"].fillna(
+                df["AREA_PRONTUARIO"]
+            )
 
-        # ---------------------------------------------------
-        # Agregar columnas nuevas
-        # ---------------------------------------------------
+        # ------------------------------------------------------
+        # Agregar información del prontuario
+        # ------------------------------------------------------
 
         if "VARIEDAD" not in df.columns:
 
-            df["VARIEDAD"] = df["VARIEDAD_PRONTUARIO"]
+            df["VARIEDAD"] = (
+                df["VARIEDAD_PRONTUARIO"]
+            )
 
         if "ULT_CORTE" not in df.columns:
 
-            df["ULT_CORTE"] = df["ULT_CORTE_PRONTUARIO"]
+            df["ULT_CORTE"] = (
+                df["ULT_CORTE_PRONTUARIO"]
+            )
 
         if "TCH_ACTUAL" not in df.columns:
 
-            df["TCH_ACTUAL"] = df["TCH_ACTUAL_PRONTUARIO"]
+            df["TCH_ACTUAL"] = (
+                df["TCH_ACTUAL_PRONTUARIO"]
+            )
 
-        # Eliminar columnas auxiliares
+        # ------------------------------------------------------
+        # Eliminar auxiliares
+        # ------------------------------------------------------
 
-        df = df.drop(
+        df.drop(
 
             columns=[
 
                 "AREA_PRONTUARIO",
-
                 "VARIEDAD_PRONTUARIO",
-
                 "ULT_CORTE_PRONTUARIO",
-
                 "TCH_ACTUAL_PRONTUARIO"
 
             ],
 
-            errors="ignore"
+            errors="ignore",
+
+            inplace=True
 
         )
 
         return df
 
     # ==========================================================
-    # Completar desde maestro
+    # Completar desde Maestro
     # ==========================================================
 
     def _completar_maestro(self, df):
 
         maestro = self.maestro.df.copy()
 
-        maestro = maestro.rename(columns={
+        maestro = maestro.rename(
+            columns={
 
-            "NOMBRE COMERCIAL": "PRODUCTO",
+                "NOMBRE COMERCIAL":
+                    "PRODUCTO",
 
-            "N": "PORC_N",
+                "N":
+                    "PORC_N",
 
-            "P": "PORC_P",
+                "P":
+                    "PORC_P",
 
-            "K": "PORC_K",
+                "K":
+                    "PORC_K",
 
-            "S": "PORC_S",
+                "S":
+                    "PORC_S",
 
-            "ELEMENTOS MENORES": "PORC_MENORES"
+                "ELEMENTOS MENORES":
+                    "PORC_MENORES"
 
-        })
+            }
+        )
 
-        # Normalizar PRODUCTO en maestro usando el mismo método que prontuario
-        import unicodedata
-        
+        # ------------------------------------------------------
+        # Normalizar producto
+        # ------------------------------------------------------
+
         def normalizar_texto(texto):
-            """Mismo método que Prontuario"""
-            if pd.isna(texto):
-                return ""
-            texto = str(texto).upper().strip()
-            texto = unicodedata.normalize("NFKD", texto)
-            texto = "".join(c for c in texto if not unicodedata.combining(c))
-            texto = " ".join(texto.split())
-            return texto
-        
-        maestro["PRODUCTO"] = maestro["PRODUCTO"].apply(normalizar_texto)
 
-        print("\nDEBUG - Maestro después de normalizar PRODUCTO:")
-        print(maestro[["PRODUCTO", "PORC_N"]].head())
+            if pd.isna(texto):
+
+                return ""
+
+            texto = str(texto).upper().strip()
+
+            texto = unicodedata.normalize(
+                "NFKD",
+                texto
+            )
+
+            texto = "".join(
+                c
+                for c in texto
+                if not unicodedata.combining(c)
+            )
+
+            texto = " ".join(
+                texto.split()
+            )
+
+            return texto
+
+        maestro["PRODUCTO"] = (
+            maestro["PRODUCTO"]
+            .apply(normalizar_texto)
+        )
 
         columnas = [
 
             "PRODUCTO",
-
             "PORC_N",
-
             "PORC_P",
-
             "PORC_K",
-
             "PORC_S",
-
             "PORC_MENORES"
 
         ]
 
         maestro = maestro[columnas]
-
-        print("\nDEBUG - Antes del merge con maestro:")
-        print(f"  Registros en df: {len(df)}")
-        print(f"  Productos únicos en df: {df['PRODUCTO'].nunique()}")
-        print(f"  Productos en maestro: {len(maestro)}")
-        print(f"  Productos únicos en maestro: {maestro['PRODUCTO'].nunique()}")
-        print(f"  Primeros productos en df: {df['PRODUCTO'].head(3).tolist()}")
-        print(f"  Primeros productos en maestro: {maestro['PRODUCTO'].head(3).tolist()}")
 
         df = df.merge(
 
@@ -446,55 +559,67 @@ class Procesador:
 
         )
 
-        print("\nDEBUG - Después del merge con maestro:")
-        print(f"  Registros con PORC_N: {df['PORC_N'].notna().sum()}")
-        print(f"  Registros sin PORC_N: {df['PORC_N'].isna().sum()}")
-        print(f"  Primeros PORC_N: {df['PORC_N'].head(5).tolist()}")
-
         return df
 
     # ==========================================================
-    # Realizar cálculos
+    # Calcular Área
     # ==========================================================
-
-    # ==========================================================
-# Completar Área
-# ==========================================================
 
     def _calcular_area(self, df):
 
         if "AREA" not in df.columns:
+
             return df
 
         mascara = (
 
             df["AREA"].isna()
 
-            &
+            & df["CANTIDAD"].notna()
 
-            df["CANTIDAD"].notna()
-
-            &
-
-            df["DOSIS X HA"].notna()
+            & df["DOSIS X HA"].notna()
 
         )
 
-        df.loc[mascara, "AREA"] = (
+        area = pd.to_numeric(
+            df.loc[mascara, "AREA"],
+            errors="coerce"
+        )
 
-            df.loc[mascara, "CANTIDAD"].astype(float)
+        cantidad = pd.to_numeric(
+            df.loc[mascara, "CANTIDAD"],
+            errors="coerce"
+        )
 
+        dosis = pd.to_numeric(
+            df.loc[mascara, "DOSIS X HA"],
+            errors="coerce"
+        )
+
+        mascara_valida = dosis != 0
+
+        indices = df.loc[
+            mascara
+        ].index[
+            mascara_valida
+        ]
+
+        df.loc[
+            indices,
+            "AREA"
+        ] = (
+
+            cantidad.loc[indices]
             /
+            dosis.loc[indices]
 
-            df.loc[mascara, "DOSIS X HA"].astype(float)
-
-        )
+        ).round(4)
 
         return df
 
     # ==========================================================
-# Completar Cantidad
-# ==========================================================
+    # Calcular Cantidad
+    # ==========================================================
 
     def _calcular_cantidad(self, df):
 
@@ -502,31 +627,49 @@ class Procesador:
 
             df["CANTIDAD"].isna()
 
-            &
+            & df["AREA"].notna()
 
-            df["AREA"].notna()
-
-            &
-
-            df["DOSIS X HA"].notna()
+            & df["DOSIS X HA"].notna()
 
         )
 
-        df.loc[mascara, "CANTIDAD"] = (
+        area = pd.to_numeric(
+            df.loc[mascara, "AREA"],
+            errors="coerce"
+        )
 
-            df.loc[mascara, "AREA"].astype(float)
+        dosis = pd.to_numeric(
+            df.loc[mascara, "DOSIS X HA"],
+            errors="coerce"
+        )
 
+        mascara_valida = (
+            area.notna()
+            & dosis.notna()
+        )
+
+        indices = df.loc[
+            mascara
+        ].index[
+            mascara_valida
+        ]
+
+        df.loc[
+            indices,
+            "CANTIDAD"
+        ] = (
+
+            area.loc[indices]
             *
+            dosis.loc[indices]
 
-            df.loc[mascara, "DOSIS X HA"].astype(float)
-
-        )
+        ).round(2)
 
         return df
 
     # ==========================================================
-# Calcular dosis
-# ==========================================================
+    # Calcular Dosis
+    # ==========================================================
 
     def _calcular_dosis(self, df):
 
@@ -534,273 +677,637 @@ class Procesador:
 
             df["DOSIS X HA"].isna()
 
-            &
+            & df["AREA"].notna()
 
-            df["AREA"].notna()
-
-            &
-
-            df["CANTIDAD"].notna()
+            & df["CANTIDAD"].notna()
 
         )
 
-        df.loc[mascara, "DOSIS X HA"] = (
+        area = pd.to_numeric(
+            df.loc[mascara, "AREA"],
+            errors="coerce"
+        )
 
-            df.loc[mascara, "CANTIDAD"].astype(float)
+        cantidad = pd.to_numeric(
+            df.loc[mascara, "CANTIDAD"],
+            errors="coerce"
+        )
 
+        mascara_valida = (
+            area.notna()
+            & cantidad.notna()
+            & (area != 0)
+        )
+
+        indices = df.loc[
+            mascara
+        ].index[
+            mascara_valida
+        ]
+
+        df.loc[
+            indices,
+            "DOSIS X HA"
+        ] = (
+
+            cantidad.loc[indices]
             /
+            area.loc[indices]
 
-            df.loc[mascara, "AREA"].astype(float)
-
-        )
+        ).round(2)
 
         return df
 
     # ==========================================================
-# Calcular Cantidad total (kg/ha × ha)
-# ==========================================================
+    # CALCULAR UNIDADES DE ELEMENTOS
+    # ==========================================================
 
     def _calcular_elementos(self, df):
 
-        print("\n================ INICIO _calcular_elementos ================\n")
+        print(
+            "\n=============================="
+        )
 
-        print("Antes del cálculo:")
-        print(df[[
-            "UNIDADES - N",
-            "UNIDADES - P",
-            "UNIDADES - K",
-            "CANTIDAD"
-        ]].head())
+        print(
+            "INICIO _calcular_elementos"
+        )
+
+        print(
+            "=============================="
+        )
 
         elementos = {
+
             "N": "PORC_N",
+
             "P": "PORC_P",
+
             "K": "PORC_K",
+
             "S": "PORC_S",
+
             "MENORES": "PORC_MENORES"
+
         }
 
-        # Asegurar que CANTIDAD sea numérica
+        # ------------------------------------------------------
+        # Verificar CANTIDAD
+        # ------------------------------------------------------
+
+        if "CANTIDAD" not in df.columns:
+
+            print(
+                "No existe CANTIDAD."
+            )
+
+            return df
+
+        # ------------------------------------------------------
+        # Asegurar cantidad numérica
+        # ------------------------------------------------------
+
         df["CANTIDAD"] = pd.to_numeric(
             df["CANTIDAD"],
             errors="coerce"
         )
 
-        for elemento, columna in elementos.items():
+        # ------------------------------------------------------
+        # Procesar elementos
+        # ------------------------------------------------------
 
-            if columna not in df.columns:
-                print(f"⚠️  Columna {columna} no encontrada, saltando {elemento}")
+        for elemento, columna_porcentaje in elementos.items():
+
+            nombre_unidades = (
+                f"UNIDADES - {elemento}"
+            )
+
+            # --------------------------------------------------
+            # Crear columna si no existe
+            # --------------------------------------------------
+
+            if nombre_unidades not in df.columns:
+
+                df[nombre_unidades] = pd.NA
+
+            # --------------------------------------------------
+            # Si no existe porcentaje no podemos calcular
+            # --------------------------------------------------
+
+            if columna_porcentaje not in df.columns:
+
                 continue
 
-            # Convertir porcentaje a numérico
-            df[columna] = pd.to_numeric(
-                df[columna],
+            df[columna_porcentaje] = pd.to_numeric(
+                df[columna_porcentaje],
                 errors="coerce"
             )
 
-            nombre_salida = f"UNIDADES - {elemento}"
+            # --------------------------------------------------
+            # MUY IMPORTANTE
+            #
+            # Convertimos solamente para evaluar.
+            # NO reemplazamos todavía la columna.
+            # --------------------------------------------------
 
-            # Convertir la columna existente a numérica
-            df[nombre_salida] = pd.to_numeric(
-                df[nombre_salida],
+            unidades_actuales = pd.to_numeric(
+                df[nombre_unidades],
                 errors="coerce"
             )
 
-            # Calcular únicamente donde el valor esté vacío
+            # --------------------------------------------------
+            # Calcular únicamente donde:
+            #
+            # 1. No existe unidad
+            # 2. Existe cantidad
+            # 3. Existe porcentaje
+            # 4. Porcentaje > 0
+            # --------------------------------------------------
+
             mascara = (
-                df[nombre_salida].isna()
-                &
-                df["CANTIDAD"].notna()
-                &
-                df[columna].notna()
+
+                unidades_actuales.isna()
+
+                & df["CANTIDAD"].notna()
+
+                & df[columna_porcentaje].notna()
+
+                & (
+                    df[columna_porcentaje] > 0
+                )
+
             )
 
-            print(f"\n{nombre_salida} - Filas calculadas: {mascara.sum()}")
+            cantidad_calcular = (
+                df.loc[
+                    mascara,
+                    "CANTIDAD"
+                ]
+            )
 
-            df.loc[mascara, nombre_salida] = (
-                df.loc[mascara, "CANTIDAD"]
+            porcentaje_calcular = (
+                df.loc[
+                    mascara,
+                    columna_porcentaje
+                ]
+            )
+
+            df.loc[
+                mascara,
+                nombre_unidades
+            ] = (
+
+                cantidad_calcular
                 *
-                df.loc[mascara, columna]
-                / 100
+                porcentaje_calcular
+                /
+                100
+
             ).round(4)
 
-        print("\nDespués del cálculo:")
-        print(df[[
-            "UNIDADES - N",
-            "UNIDADES - P",
-            "UNIDADES - K",
-            "UNIDADES - S",
-            "UNIDADES - MENORES",
-            "CANTIDAD"
-        ]].head())
+            print(
+                f"{nombre_unidades}: "
+                f"{mascara.sum()} calculados"
+            )
 
-        print("\n================ FIN _calcular_elementos ================\n")
+        print(
+            "FIN _calcular_elementos"
+        )
+
+        print(
+            "==============================\n"
+        )
 
         return df
 
-# ==========================================================
-# Calcular cantidad del producto a partir de unidades
-# ==========================================================
+    # ==========================================================
+    # Calcular Producto a partir de unidades suministradas
+    # ==========================================================
 
     def _calcular_producto(self, df):
 
-        print("\n================ INICIO _calcular_producto ================\n")
-        print("Columnas disponibles:")
-        print(df.columns.tolist())
+        print(
+            "\n=============================="
+        )
+
+        print(
+            "INICIO _calcular_producto"
+        )
+
+        print(
+            "=============================="
+        )
 
         for idx in df.index:
 
-            print("\n===================================================\n")
-            print("FILA:", idx)
+            # --------------------------------------------------
+            # Cantidad actual
+            # --------------------------------------------------
 
-            # Si ya existe la cantidad no hacer nada
-            cantidad = Calculos.numero(df.at[idx, "CANTIDAD"])
+            cantidad = Calculos.numero(
+                df.at[
+                    idx,
+                    "CANTIDAD"
+                ]
+            )
+
+            # --------------------------------------------------
+            # Si ya tiene cantidad,
+            # NO modificarla
+            # --------------------------------------------------
+
             if not pd.isna(cantidad):
-                print(">> Ya tiene cantidad. Se omite.")
+
                 continue
 
-            producto = df.at[idx, "PRODUCTO"]
-            print("Producto:", producto)
+            # --------------------------------------------------
+            # Producto
+            # --------------------------------------------------
+
+            producto = df.at[
+                idx,
+                "PRODUCTO"
+            ]
+
             if pd.isna(producto):
-                print(">> Producto vacío.")
+
                 continue
 
-            aportes = self.maestro.obtener_aportes(producto)
-            print("Aportes:", aportes)
+            # --------------------------------------------------
+            # Buscar producto en Maestro
+            # --------------------------------------------------
+
+            aportes = (
+                self.maestro.obtener_aportes(
+                    producto
+                )
+            )
+
             if aportes is None:
-                print(">> No se encontró el producto en el maestro.")
+
                 continue
 
-            # Buscar el primer elemento con unidades suministradas y porcentaje > 0
-            for elemento in ["N", "P", "K", "S", "MENORES"]:
-                columna_unidades = f"UNIDADES - {elemento}"
-                if columna_unidades not in df.columns:
+            # --------------------------------------------------
+            # Buscar unidades suministradas
+            # --------------------------------------------------
+
+            for elemento in [
+
+                "N",
+                "P",
+                "K",
+                "S",
+                "MENORES"
+
+            ]:
+
+                columna_unidades = (
+                    f"UNIDADES - {elemento}"
+                )
+
+                if (
+                    columna_unidades
+                    not in df.columns
+                ):
+
                     continue
 
-                unidades_raw = df.at[idx, columna_unidades]
-                unidades = Calculos.numero(unidades_raw)
-                porcentaje = Calculos.numero(aportes.get(elemento, 0))
-                print("\nElemento:", elemento)
-                print("Columna esperada:", columna_unidades)
-                print("Valor crudo:", unidades_raw)
-                print("Unidades:", unidades)
-                print("Porcentaje:", porcentaje)
+                unidades = Calculos.numero(
+                    df.at[
+                        idx,
+                        columna_unidades
+                    ]
+                )
 
-                if Calculos.puede_calcular_cantidad_por_elemento(cantidad, unidades, porcentaje):
-                    cantidad_calc = Calculos.calcular_producto(unidades, porcentaje)
-                    print("Cantidad calculada:", cantidad_calc)
-                    df.at[idx, "CANTIDAD"] = cantidad_calc
-                    cantidad = cantidad_calc
-                    break
+                porcentaje = Calculos.numero(
+                    aportes.get(
+                        elemento,
+                        0
+                    )
+                )
 
-            # Después de calcular CANTIDAD, intentar recomputar DOSIS X HA y ÁREA si faltan
-            area = Calculos.numero(df.at[idx, "AREA"])
-            dosis = Calculos.numero(df.at[idx, "DOSIS X HA"])
+                # --------------------------------------------------
+                # Si existen unidades y porcentaje,
+                # calcular cantidad
+                # --------------------------------------------------
 
-            # Recalcular DOSIS X HA si falta y AREA está disponible
-            if pd.isna(dosis) and not pd.isna(area) and not pd.isna(cantidad):
-                nueva_dosis = Calculos.calcular_dosis(area, cantidad)
-                print("Nueva dosis calculada:", nueva_dosis)
-                df.at[idx, "DOSIS X HA"] = nueva_dosis
+                if Calculos.puede_calcular_cantidad_por_elemento(
+
+                    cantidad,
+                    unidades,
+                    porcentaje
+
+                ):
+
+                    cantidad_calculada = (
+                        Calculos.calcular_producto(
+                            unidades,
+                            porcentaje
+                        )
+                    )
+
+                    if not pd.isna(
+                        cantidad_calculada
+                    ):
+
+                        df.at[
+                            idx,
+                            "CANTIDAD"
+                        ] = cantidad_calculada
+
+                        cantidad = (
+                            cantidad_calculada
+                        )
+
+                        break
+
+            # --------------------------------------------------
+            # Después de calcular cantidad,
+            # intentar calcular dosis
+            # --------------------------------------------------
+
+            area = Calculos.numero(
+                df.at[
+                    idx,
+                    "AREA"
+                ]
+            )
+
+            dosis = Calculos.numero(
+                df.at[
+                    idx,
+                    "DOSIS X HA"
+                ]
+            )
+
+            # --------------------------------------------------
+            # AREA + CANTIDAD → DOSIS
+            # --------------------------------------------------
+
+            if (
+
+                pd.isna(dosis)
+
+                and not pd.isna(area)
+
+                and not pd.isna(cantidad)
+
+            ):
+
+                nueva_dosis = (
+                    Calculos.calcular_dosis(
+                        area,
+                        cantidad
+                    )
+                )
+
+                df.at[
+                    idx,
+                    "DOSIS X HA"
+                ] = nueva_dosis
+
                 dosis = nueva_dosis
 
-            # Recalcular ÁREA si falta y DOSIS está disponible
-            if pd.isna(area) and not pd.isna(dosis) and not pd.isna(cantidad):
-                nueva_area = Calculos.calcular_area(cantidad, dosis)
-                print("Nueva área calculada:", nueva_area)
-                df.at[idx, "AREA"] = nueva_area
+            # --------------------------------------------------
+            # DOSIS + CANTIDAD → AREA
+            # --------------------------------------------------
 
-        print("\n================ FIN _calcular_producto ================\n")
+            if (
+
+                pd.isna(area)
+
+                and not pd.isna(dosis)
+
+                and not pd.isna(cantidad)
+
+            ):
+
+                nueva_area = (
+                    Calculos.calcular_area(
+                        cantidad,
+                        dosis
+                    )
+                )
+
+                df.at[
+                    idx,
+                    "AREA"
+                ] = nueva_area
+
+        print(
+            "FIN _calcular_producto"
+        )
+
+        print(
+            "==============================\n"
+        )
 
         return df
 
     # ==========================================================
-    # Realizar cálculos
+    # ORQUESTADOR DE CÁLCULOS
     # ==========================================================
-        
+
     def _calcular(self, df):
 
+        print(
+            "\n########################################"
+        )
+
+        print(
+            "INICIO PROCESO DE CÁLCULOS"
+        )
+
+        print(
+            "########################################"
+        )
+
+        # ------------------------------------------------------
+        # 1. AREA desde CANTIDAD / DOSIS
+        # ------------------------------------------------------
+
         df = self._calcular_area(df)
+
+        # ------------------------------------------------------
+        # 2. CANTIDAD desde AREA × DOSIS
+        # ------------------------------------------------------
 
         df = self._calcular_cantidad(df)
 
+        # ------------------------------------------------------
+        # 3. DOSIS desde CANTIDAD / AREA
+        # ------------------------------------------------------
+
         df = self._calcular_dosis(df)
 
+        # ------------------------------------------------------
+        # 4. UNIDADES desde CANTIDAD × porcentaje
+        #
+        # Solo llena unidades vacías.
+        # ------------------------------------------------------
+
         df = self._calcular_elementos(df)
+
+        # ------------------------------------------------------
+        # 5. Si todavía falta CANTIDAD,
+        # buscar unidades suministradas por usuario.
+        # ------------------------------------------------------
 
         df = self._calcular_producto(df)
 
-        # producto pudo completar área o dosis
+        # ------------------------------------------------------
+        # 6. Volver a completar AREA
+        # ------------------------------------------------------
+
         df = self._calcular_area(df)
+
+        # ------------------------------------------------------
+        # 7. Volver a completar DOSIS
+        # ------------------------------------------------------
 
         df = self._calcular_dosis(df)
 
-        # ahora sí todas las unidades quedan completas
+        # ------------------------------------------------------
+        # 8. Ahora que CANTIDAD pudo haber sido calculada,
+        # completar las unidades que sigan vacías.
+        #
+        # Las unidades existentes se conservan.
+        # ------------------------------------------------------
+
         df = self._calcular_elementos(df)
+
+        print(
+            "\n########################################"
+        )
+
+        print(
+            "FIN PROCESO DE CÁLCULOS"
+        )
+
+        print(
+            "########################################\n"
+        )
 
         return df
 
     # ==========================================================
     # Validar información
     # ==========================================================
-    
+
     def _validar(self, df):
 
-        # ----------------------------
-        # Validaciones existentes
-        # ----------------------------
+        # ------------------------------------------------------
+        # Validaciones generales
+        # ------------------------------------------------------
 
         self.validador.validar_hacienda(df)
 
         self.validador.validar_suerte(df)
 
-        # ----------------------------
-        # Validar Área
-        # ----------------------------
+        # ------------------------------------------------------
+        # Validar AREA
+        # ------------------------------------------------------
 
-        if all(col in df.columns for col in ["AREA", "CANTIDAD", "DOSIS X HA"]):
+        columnas = [
+            "AREA",
+            "CANTIDAD",
+            "DOSIS X HA"
+        ]
 
-            area = pd.to_numeric(df["AREA"], errors="coerce")
+        if all(
+            col in df.columns
+            for col in columnas
+        ):
 
-            cantidad = pd.to_numeric(df["CANTIDAD"], errors="coerce")
+            area = pd.to_numeric(
+                df["AREA"],
+                errors="coerce"
+            )
 
-            dosis = pd.to_numeric(df["DOSIS X HA"], errors="coerce")
+            cantidad = pd.to_numeric(
+                df["CANTIDAD"],
+                errors="coerce"
+            )
 
-            calculada = cantidad / dosis
+            dosis = pd.to_numeric(
+                df["DOSIS X HA"],
+                errors="coerce"
+            )
 
-            diferencia = (area - calculada).abs()
+            # --------------------------------------------------
+            # Evitar división por cero
+            # --------------------------------------------------
 
-            mascara = (
+            mascara_base = (
 
                 area.notna()
 
-                &
+                & cantidad.notna()
 
-                cantidad.notna()
+                & dosis.notna()
 
-                &
-
-                dosis.notna()
-
-                &
-
-                (diferencia > 0.01)
+                & (dosis != 0)
 
             )
 
-            for idx in df.index[mascara]:
+            calculada = pd.Series(
+                np.nan,
+                index=df.index
+            )
+
+            calculada.loc[
+                mascara_base
+            ] = (
+
+                cantidad.loc[
+                    mascara_base
+                ]
+
+                /
+
+                dosis.loc[
+                    mascara_base
+                ]
+
+            )
+
+            diferencia = (
+                area - calculada
+            ).abs()
+
+            mascara_error = (
+
+                mascara_base
+
+                & calculada.notna()
+
+                & (diferencia > 0.01)
+
+            )
+
+            for idx in df.index[
+                mascara_error
+            ]:
 
                 self.validador.registrar_error(
 
-                    archivo=df.at[idx, "ARCHIVO_ORIGEN"],
+                    archivo=df.at[
+                        idx,
+                        "ARCHIVO_ORIGEN"
+                    ],
 
                     fila=idx + 2,
 
                     campo="AREA",
 
-                    valor=df.at[idx, "AREA"],
+                    valor=df.at[
+                        idx,
+                        "AREA"
+                    ],
 
-                    descripcion="Area no coincide con Cantidad / Dosis"
+                    descripcion=(
+                        "Area no coincide "
+                        "con Cantidad / Dosis"
+                    )
 
                 )
 
@@ -814,4 +1321,6 @@ class Procesador:
 
                 )
 
-        return pd.DataFrame(self.validador.errores)
+        return pd.DataFrame(
+            self.validador.errores
+        )
