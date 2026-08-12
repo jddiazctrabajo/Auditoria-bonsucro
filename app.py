@@ -754,15 +754,11 @@ st.markdown(
 col_d1, col_d2 = st.columns(2)
 
 
-# ==========================================================
-# DESCARGAR CONSOLIDADO
-# ==========================================================
-
 with col_d1:
 
-    # ------------------------------------------------------
-    # Definir el orden de columnas del Excel
-    # ------------------------------------------------------
+    # ==========================================================
+    # COLUMNAS DEL CONSOLIDADO A EXPORTAR
+    # ==========================================================
 
     columnas_exportar = [
         "HACIENDA",
@@ -794,27 +790,25 @@ with col_d1:
         "OBSERVACIONES"
     ]
 
-    # ------------------------------------------------------
-    # Mantener solamente las columnas que existen
-    # ------------------------------------------------------
+    # ==========================================================
+    # Solo utilizar columnas que realmente existan
+    # ==========================================================
 
     columnas_exportar = [
-        columna
-        for columna in columnas_exportar
-        if columna in df_filtrado.columns
+        c
+        for c in columnas_exportar
+        if c in df_filtrado.columns
     ]
 
-    # ------------------------------------------------------
-    # Crear DataFrame para exportación
-    # ------------------------------------------------------
+    # ==========================================================
+    # Crear DataFrame final para descarga
+    # ==========================================================
 
-    df_exportar = df_filtrado[
-        columnas_exportar
-    ].copy()
+    df_exportar = df_filtrado[columnas_exportar].copy()
 
-    # ------------------------------------------------------
-    # Botón
-    # ------------------------------------------------------
+    # ==========================================================
+    # Botón de descarga
+    # ==========================================================
 
     st.download_button(
         label="📥 Descargar consolidado (.xlsx)",
@@ -838,7 +832,7 @@ with col_d1:
         type="primary"
     )
 
-
+|
 # ==========================================================
 # DESCARGAR ERRORES
 # ==========================================================
