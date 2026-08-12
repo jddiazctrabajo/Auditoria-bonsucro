@@ -708,12 +708,12 @@ def _calcular(self, df):
     df = self._calcular_producto(df)
 
     # producto pudo completar área o dosis
-    #df = self._calcular_area(df)
+    df = self._calcular_area(df)
 
-    #df = self._calcular_dosis(df)
+    df = self._calcular_dosis(df)
 
     # ahora sí todas las unidades quedan completas
-    #df = self._calcular_elementos(df)
+    df = self._calcular_elementos(df)
 
     return df
     # ==========================================================
