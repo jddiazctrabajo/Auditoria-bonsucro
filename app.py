@@ -758,6 +758,7 @@ with col_d1:
         "SUERTE",
         "ULT_CORTE",
         "AREA",
+        "PRODUCTO",
         "DOSIS X HA",
         "UNIDAD",
         "CANTIDAD",
