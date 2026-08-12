@@ -31,6 +31,22 @@ Devolver DataFrames
 ==============================================================
 """
 
+from openpyxl.workbook import defined_name
+from openpyxl.workbook import defined_name
+from openpyxl.workbook import defined_name
+from openpyxl.workbook import defined_name
+from openpyxl.workbook import defined_name
+from core import normalizador_campos
+from openpyxl.workbook import defined_name
+from openpyxl.workbook import defined_name
+from openpyxl.workbook import defined_name
+from openpyxl.workbook import defined_name
+from openpyxl.workbook import defined_name
+from openpyxl.workbook import defined_name
+from openpyxl.workbook import defined_name
+from openpyxl.workbook import defined_name
+from core import maestro
+from core import prontuario
 from pathlib import Path
 import pandas as pd
 
@@ -215,6 +231,7 @@ class Procesador:
                     .fillna("")
                     .astype(str)
                     .str.strip()
+                    .str.upper()  # ← AGREGAR: Convertir a mayúsculas
                 )
 
         # Normalizar nombres de columnas: eliminar espacios, unificar guiones y colapsar espacios, manejar caracteres invisibles
@@ -373,6 +390,15 @@ class Procesador:
             "ELEMENTOS MENORES": "PORC_MENORES"
 
         })
+
+        # Normalizar PRODUCTO en maestro (mayúsculas y sin espacios extras)
+        maestro["PRODUCTO"] = (
+            maestro["PRODUCTO"]
+            .fillna("")
+            .astype(str)
+            .str.strip()
+            .str.upper()
+        )
 
         columnas = [
 
@@ -540,6 +566,7 @@ class Procesador:
         for elemento, columna in elementos.items():
 
             if columna not in df.columns:
+                print(f"⚠️  Columna {columna} no encontrada, saltando {elemento}")
                 continue
 
             # Convertir porcentaje a numérico
@@ -552,11 +579,11 @@ class Procesador:
 
             # Convertir la columna existente a numérica
             df[nombre_salida] = pd.to_numeric(
-            df[nombre_salida],
-            errors="coerce"
-        )
+                df[nombre_salida],
+                errors="coerce"
+            )
 
-        # Calcular únicamente donde el valor esté vacío
+            # Calcular únicamente donde el valor esté vacío
             mascara = (
                 df[nombre_salida].isna()
                 &
@@ -564,16 +591,15 @@ class Procesador:
                 &
                 df[columna].notna()
             )
-    
+
+            print(f"\n{nombre_salida} - Filas calculadas: {mascara.sum()}")
+
             df.loc[mascara, nombre_salida] = (
                 df.loc[mascara, "CANTIDAD"]
                 *
                 df.loc[mascara, columna]
                 / 100
             ).round(4)
-
-        print(f"\n{nombre_salida}")
-        print("Filas calculadas:", mascara.sum())
 
         print("\nDespués del cálculo:")
         print(df[[
@@ -666,31 +692,30 @@ class Procesador:
         return df
 
     # ==========================================================
-    # Realizar cálculos
-    # ==========================================================
+# Realizar cálculos
+# ==========================================================
         
-    def _calcular(self, df):
+def _calcular(self, df):
 
-        df = self._calcular_area(df)
+    df = self._calcular_area(df)
 
-        df = self._calcular_cantidad(df)
+    df = self._calcular_cantidad(df)
 
-        df = self._calcular_dosis(df)
+    df = self._calcular_dosis(df)
 
-        df = self._calcular_elementos(df)
+    df = self._calcular_elementos(df)
 
-        df = self._calcular_producto(df)
+    df = self._calcular_producto(df)
 
-        # producto pudo completar área o dosis
-        df = self._calcular_area(df)
+    # producto pudo completar área o dosis
+    df = self._calcular_area(df)
 
-        df = self._calcular_dosis(df)
+    df = self._calcular_dosis(df)
 
-        # ahora sí todas las unidades quedan completas
-        df = self._calcular_elementos(df)
+    # ahora sí todas las unidades quedan completas
+    df = self._calcular_elementos(df)
 
-        return df
-
+    return df
     # ==========================================================
     # Validar información
     # ==========================================================
