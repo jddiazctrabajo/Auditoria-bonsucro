@@ -736,29 +736,43 @@ if not df_consolidado.empty:
             else:
                 st.success("✅ Todos los datos pasaron la validación")
 
-    # ---- Descargas ----
-    st.markdown("---")
+   # ==========================================================
+# DESCARGAS
+# ==========================================================
 
-    st.markdown(
-        '<p class="section-title">💾 Descargas</p>',
-        unsafe_allow_html=True
-    )
+st.markdown("---")
 
-    col_d1, col_d2 = st.columns(2)
+st.markdown(
+    '<p class="section-title">💾 Descargas</p>',
+    unsafe_allow_html=True
+)
+
+# ----------------------------------------------------------
+# Crear las dos columnas de descarga
+# ----------------------------------------------------------
+
+col_d1, col_d2 = st.columns(2)
+
+
+# ==========================================================
+# DESCARGAR CONSOLIDADO
+# ==========================================================
 
 with col_d1:
 
-    # ==========================================================
-    # COLUMNAS DEL CONSOLIDADO A EXPORTAR
-    # ==========================================================
+    # ------------------------------------------------------
+    # Definir el orden de columnas del Excel
+    # ------------------------------------------------------
 
     columnas_exportar = [
-        "RAZON_SOCIAL",
         "HACIENDA",
+        "FECHAS",
         "SUERTE",
-        "ULT_CORTE",
         "AREA",
         "PRODUCTO",
+        "VARIEDAD",
+        "ULT_CORTE",
+        "TCH_ACTUAL",
         "DOSIS X HA",
         "UNIDAD",
         "CANTIDAD",
@@ -768,31 +782,39 @@ with col_d1:
         "UNIDADES - K",
         "UNIDADES - S",
         "UNIDADES - MENORES",
+        "PORC_N",
+        "PORC_P",
+        "PORC_K",
+        "PORC_S",
+        "PORC_MENORES",
+        "RAZON_SOCIAL",
         "HACIENDA_ARCHIVO",
         "ARCHIVO_ORIGEN",
         "ESTADO",
         "OBSERVACIONES"
     ]
 
-    # ==========================================================
-    # Solo utilizar columnas que realmente existan
-    # ==========================================================
+    # ------------------------------------------------------
+    # Mantener solamente las columnas que existen
+    # ------------------------------------------------------
 
     columnas_exportar = [
-        c
-        for c in columnas_exportar
-        if c in df_filtrado.columns
+        columna
+        for columna in columnas_exportar
+        if columna in df_filtrado.columns
     ]
 
-    # ==========================================================
-    # Crear DataFrame final para descarga
-    # ==========================================================
+    # ------------------------------------------------------
+    # Crear DataFrame para exportación
+    # ------------------------------------------------------
 
-    df_exportar = df_filtrado[columnas_exportar].copy()
+    df_exportar = df_filtrado[
+        columnas_exportar
+    ].copy()
 
-    # ==========================================================
-    # Botón de descarga
-    # ==========================================================
+    # ------------------------------------------------------
+    # Botón
+    # ------------------------------------------------------
 
     st.download_button(
         label="📥 Descargar consolidado (.xlsx)",
@@ -816,23 +838,44 @@ with col_d1:
         type="primary"
     )
 
-    with col_d2:
-        if errores_list:
-            st.download_button(
-                label="📥 Descargar errores (.xlsx)",
-                data=to_excel_bytes(pd.DataFrame(errores_list)),
-                file_name=(
-                    f"Errores_Lectura_"
-                    f"{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx"
-                ),
-                mime=(
-                    "application/vnd.openxmlformats-officedocument"
-                    ".spreadsheetml.sheet"
-                ),
-                use_container_width=True
-            )
-        else:
-            st.success("✅ No hubo errores de lectura")
+
+# ==========================================================
+# DESCARGAR ERRORES
+# ==========================================================
+
+with col_d2:
+
+    if errores_list:
+
+        df_errores = pd.DataFrame(
+            errores_list
+        )
+
+        st.download_button(
+            label="📥 Descargar errores (.xlsx)",
+
+            data=to_excel_bytes(
+                df_errores
+            ),
+
+            file_name=(
+                f"Errores_Lectura_"
+                f"{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx"
+            ),
+
+            mime=(
+                "application/vnd.openxmlformats-officedocument"
+                ".spreadsheetml.sheet"
+            ),
+
+            use_container_width=True
+        )
+
+    else:
+
+        st.success(
+            "✅ No hubo errores de lectura"
+        )
 
     # ---- Referencia cruzada con maestro ----
     if fertilizantes_df is not None and "PRODUCTO" in df_filtrado.columns:
