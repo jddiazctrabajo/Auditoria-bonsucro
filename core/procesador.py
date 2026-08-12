@@ -31,22 +31,6 @@ Devolver DataFrames
 ==============================================================
 """
 
-from openpyxl.workbook import defined_name
-from openpyxl.workbook import defined_name
-from openpyxl.workbook import defined_name
-from openpyxl.workbook import defined_name
-from openpyxl.workbook import defined_name
-from core import normalizador_campos
-from openpyxl.workbook import defined_name
-from openpyxl.workbook import defined_name
-from openpyxl.workbook import defined_name
-from openpyxl.workbook import defined_name
-from openpyxl.workbook import defined_name
-from openpyxl.workbook import defined_name
-from openpyxl.workbook import defined_name
-from openpyxl.workbook import defined_name
-from core import maestro
-from core import prontuario
 from pathlib import Path
 import pandas as pd
 
