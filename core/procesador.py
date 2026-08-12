@@ -452,400 +452,495 @@ class Procesador:
 
         return df
 
-    # ==========================================================
-    # Realizar cálculos
+     # ==========================================================
+    # REALIZAR CÁLCULOS
     # ==========================================================
 
     # ==========================================================
-# Completar Área
-# ==========================================================
+    # Completar Área
+    # ==========================================================
 
     def _calcular_area(self, df):
 
         if "AREA" not in df.columns:
             return df
 
+        # AREA = CANTIDAD / DOSIS
         mascara = (
-
             df["AREA"].isna()
-
-            &
-
-            df["CANTIDAD"].notna()
-
-            &
-
-            df["DOSIS X HA"].notna()
-
+            & df["CANTIDAD"].notna()
+            & df["DOSIS X HA"].notna()
         )
 
         df.loc[mascara, "AREA"] = (
-
-            df.loc[mascara, "CANTIDAD"].astype(float)
-
+            pd.to_numeric(df.loc[mascara, "CANTIDAD"], errors="coerce")
             /
-
-            df.loc[mascara, "DOSIS X HA"].astype(float)
-
-        )
+            pd.to_numeric(df.loc[mascara, "DOSIS X HA"], errors="coerce")
+        ).round(4)
 
         return df
 
+
     # ==========================================================
-# Completar Cantidad
-# ==========================================================
+    # Completar Cantidad
+    # ==========================================================
 
     def _calcular_cantidad(self, df):
 
+        # CANTIDAD = AREA × DOSIS
         mascara = (
-
             df["CANTIDAD"].isna()
-
-            &
-
-            df["AREA"].notna()
-
-            &
-
-            df["DOSIS X HA"].notna()
-
+            & df["AREA"].notna()
+            & df["DOSIS X HA"].notna()
         )
 
         df.loc[mascara, "CANTIDAD"] = (
-
-            df.loc[mascara, "AREA"].astype(float)
-
+            pd.to_numeric(df.loc[mascara, "AREA"], errors="coerce")
             *
-
-            df.loc[mascara, "DOSIS X HA"].astype(float)
-
-        )
+            pd.to_numeric(df.loc[mascara, "DOSIS X HA"], errors="coerce")
+        ).round(2)
 
         return df
 
+
     # ==========================================================
-# Calcular dosis
-# ==========================================================
+    # Completar Dosis
+    # ==========================================================
 
     def _calcular_dosis(self, df):
 
+        # DOSIS = CANTIDAD / AREA
         mascara = (
-
             df["DOSIS X HA"].isna()
-
-            &
-
-            df["AREA"].notna()
-
-            &
-
-            df["CANTIDAD"].notna()
-
+            & df["AREA"].notna()
+            & df["CANTIDAD"].notna()
         )
 
-        df.loc[mascara, "DOSIS X HA"] = (
+        area = pd.to_numeric(
+            df.loc[mascara, "AREA"],
+            errors="coerce"
+        )
 
-            df.loc[mascara, "CANTIDAD"].astype(float)
+        cantidad = pd.to_numeric(
+            df.loc[mascara, "CANTIDAD"],
+            errors="coerce"
+        )
 
+        # Evitar división por cero
+        mascara_valida = area != 0
+
+        indices = df.loc[mascara].index[mascara_valida]
+
+        df.loc[indices, "DOSIS X HA"] = (
+            cantidad.loc[indices]
             /
-
-            df.loc[mascara, "AREA"].astype(float)
-
-        )
+            area.loc[indices]
+        ).round(2)
 
         return df
 
+
     # ==========================================================
-# Calcular Cantidad total (kg/ha × ha)
-# ==========================================================
+    # Calcular unidades de elementos
+    # ==========================================================
 
     def _calcular_elementos(self, df):
 
-    print("\n")
-    print("====================================================")
-    print("           INICIO _calcular_elementos")
-    print("====================================================")
+        print("\n================ INICIO _calcular_elementos ================")
 
-    elementos = {
-        "N": "PORC_N",
-        "P": "PORC_P",
-        "K": "PORC_K",
-        "S": "PORC_S",
-        "MENORES": "PORC_MENORES"
-    }
+        elementos = {
 
-    # --------------------------------------------------
-    # Convertir CANTIDAD a número
-    # --------------------------------------------------
+            "N": "PORC_N",
 
-    if "CANTIDAD" not in df.columns:
-        print("ERROR: No existe columna CANTIDAD")
+            "P": "PORC_P",
+
+            "K": "PORC_K",
+
+            "S": "PORC_S",
+
+            "MENORES": "PORC_MENORES"
+
+        }
+
+        # ------------------------------------------------------
+        # Asegurar que CANTIDAD sea numérica
+        # ------------------------------------------------------
+
+        df["CANTIDAD"] = pd.to_numeric(
+            df["CANTIDAD"],
+            errors="coerce"
+        )
+
+        # ------------------------------------------------------
+        # Procesar cada elemento
+        # ------------------------------------------------------
+
+        for elemento, columna_porcentaje in elementos.items():
+
+            if columna_porcentaje not in df.columns:
+                continue
+
+            nombre_salida = f"UNIDADES - {elemento}"
+
+            # Si la columna no existe, crearla
+            if nombre_salida not in df.columns:
+                df[nombre_salida] = pd.NA
+
+            df[columna_porcentaje] = pd.to_numeric(
+                df[columna_porcentaje],
+                errors="coerce"
+            )
+
+            # --------------------------------------------------
+            # IMPORTANTE:
+            #
+            # SOLO calcular cuando:
+            #   1. CANTIDAD existe
+            #   2. PORCENTAJE existe
+            #   3. La unidad NO fue suministrada previamente
+            #
+            # Esto evita borrar información ingresada por usuario.
+            # --------------------------------------------------
+
+            unidades_existentes = pd.to_numeric(
+                df[nombre_salida],
+                errors="coerce"
+            )
+
+            mascara_calcular = (
+                unidades_existentes.isna()
+                &
+                df["CANTIDAD"].notna()
+                &
+                df[columna_porcentaje].notna()
+            )
+
+            df.loc[mascara_calcular, nombre_salida] = (
+
+                df.loc[mascara_calcular, "CANTIDAD"]
+
+                *
+
+                df.loc[mascara_calcular, columna_porcentaje]
+
+                /
+
+                100
+
+            ).round(4)
+
+            print(
+                f"{nombre_salida}: "
+                f"{mascara_calcular.sum()} valores calculados"
+            )
+
+        print("================ FIN _calcular_elementos ================\n")
+
         return df
 
-    df["CANTIDAD"] = pd.to_numeric(
-        df["CANTIDAD"],
-        errors="coerce"
-    )
 
-    # --------------------------------------------------
-    # Procesar cada elemento
-    # --------------------------------------------------
-
-    for elemento, columna_porcentaje in elementos.items():
-
-        nombre_salida = f"UNIDADES - {elemento}"
-
-        print("\n--------------------------------------------------")
-        print("ELEMENTO:", elemento)
-        print("PORCENTAJE:", columna_porcentaje)
-        print("SALIDA:", nombre_salida)
-
-        # Si no existe porcentaje, no podemos calcular
-        if columna_porcentaje not in df.columns:
-            print(">> No existe", columna_porcentaje)
-            continue
-
-        # --------------------------------------------------
-        # Convertir porcentaje
-        # --------------------------------------------------
-
-        df[columna_porcentaje] = pd.to_numeric(
-            df[columna_porcentaje],
-            errors="coerce"
-        )
-
-        # --------------------------------------------------
-        # Crear columna si no existe
-        # --------------------------------------------------
-
-        if nombre_salida not in df.columns:
-
-            print(">> La columna no existe. Se crea.")
-
-            df[nombre_salida] = np.nan
-
-        # --------------------------------------------------
-        # Convertir unidades existentes a número
-        # --------------------------------------------------
-
-        df[nombre_salida] = pd.to_numeric(
-            df[nombre_salida],
-            errors="coerce"
-        )
-
-        # --------------------------------------------------
-        # Identificar filas que YA tienen unidades
-        # --------------------------------------------------
-
-        tiene_unidad = df[nombre_salida].notna()
-
-        # --------------------------------------------------
-        # Identificar filas que pueden calcularse
-        # --------------------------------------------------
-
-        puede_calcular = (
-            df[nombre_salida].isna()
-            &
-            df["CANTIDAD"].notna()
-            &
-            df[columna_porcentaje].notna()
-        )
-
-        # --------------------------------------------------
-        # CALCULAR
-        # --------------------------------------------------
-
-        calculado = (
-            df["CANTIDAD"]
-            *
-            df[columna_porcentaje]
-            /
-            100
-        ).round(4)
-
-        # --------------------------------------------------
-        # IMPORTANTE:
-        # SOLO llenar donde estaba vacío
-        # NUNCA sobrescribir lo que ya tenía el usuario
-        # --------------------------------------------------
-
-        df.loc[puede_calcular, nombre_salida] = (
-            calculado.loc[puede_calcular]
-        )
-
-        # --------------------------------------------------
-        # Si porcentaje = 0 y no había unidad,
-        # el aporte matemáticamente es 0
-        # --------------------------------------------------
-
-        porcentaje_cero = (
-            df[nombre_salida].isna()
-            &
-            df[columna_porcentaje].eq(0)
-        )
-
-        df.loc[porcentaje_cero, nombre_salida] = 0
-
-        # --------------------------------------------------
-        # DEBUG
-        # --------------------------------------------------
-
-        print("Unidades existentes antes:", tiene_unidad.sum())
-        print("Filas calculadas:", puede_calcular.sum())
-        print("Filas con porcentaje 0:", porcentaje_cero.sum())
-        print("Unidades finales:", df[nombre_salida].notna().sum())
-
-    # --------------------------------------------------
-    # VERIFICACIÓN FINAL
-    # --------------------------------------------------
-
-    columnas_unidades = [
-        "UNIDADES - N",
-        "UNIDADES - P",
-        "UNIDADES - K",
-        "UNIDADES - S",
-        "UNIDADES - MENORES"
-    ]
-
-    columnas_existentes = [
-        c for c in columnas_unidades
-        if c in df.columns
-    ]
-
-    print("\n====================================================")
-    print("RESULTADO FINAL DE UNIDADES")
-    print("====================================================")
-
-    print(
-        df[
-            ["PRODUCTO", "CANTIDAD", "PORC_N", "PORC_P",
-             "PORC_K", "PORC_S", "PORC_MENORES"]
-            + columnas_existentes
-        ].head(20).to_string()
-    )
-
-    print("\n====================================================")
-    print("           FIN _calcular_elementos")
-    print("====================================================")
-
-    return df
-# ==========================================================
-# Calcular cantidad del producto a partir de unidades
-# ==========================================================
+    # ==========================================================
+    # Calcular cantidad del producto a partir de unidades
+    # ==========================================================
 
     def _calcular_producto(self, df):
 
         print("\n================ INICIO _calcular_producto ================\n")
-        print("Columnas disponibles:")
-        print(df.columns.tolist())
 
         for idx in df.index:
 
-            print("\n===================================================\n")
+            print("===================================================")
             print("FILA:", idx)
 
-            # Si ya existe la cantidad no hacer nada
-            cantidad = Calculos.numero(df.at[idx, "CANTIDAD"])
+            # --------------------------------------------------
+            # CANTIDAD actual
+            # --------------------------------------------------
+
+            cantidad = Calculos.numero(
+                df.at[idx, "CANTIDAD"]
+            )
+
+            # Si ya existe cantidad, no modificarla
             if not pd.isna(cantidad):
+
                 print(">> Ya tiene cantidad. Se omite.")
+
                 continue
+
+            # --------------------------------------------------
+            # PRODUCTO
+            # --------------------------------------------------
 
             producto = df.at[idx, "PRODUCTO"]
+
             print("Producto:", producto)
+
             if pd.isna(producto):
+
                 print(">> Producto vacío.")
+
                 continue
+
+            # --------------------------------------------------
+            # Buscar aportes en Maestro
+            # --------------------------------------------------
 
             aportes = self.maestro.obtener_aportes(producto)
+
             print("Aportes:", aportes)
+
             if aportes is None:
-                print(">> No se encontró el producto en el maestro.")
+
+                print(
+                    ">> No se encontró el producto en el maestro."
+                )
+
                 continue
 
-            # Buscar el primer elemento con unidades suministradas y porcentaje > 0
-            for elemento in ["N", "P", "K", "S", "MENORES"]:
-                columna_unidades = f"UNIDADES - {elemento}"
+            # --------------------------------------------------
+            # Buscar unidades disponibles
+            # --------------------------------------------------
+
+            cantidad_calculada = np.nan
+
+            for elemento in [
+                "N",
+                "P",
+                "K",
+                "S",
+                "MENORES"
+            ]:
+
+                columna_unidades = (
+                    f"UNIDADES - {elemento}"
+                )
+
                 if columna_unidades not in df.columns:
+
                     continue
 
-                unidades_raw = df.at[idx, columna_unidades]
-                unidades = Calculos.numero(unidades_raw)
-                porcentaje = Calculos.numero(aportes.get(elemento, 0))
-                print("\nElemento:", elemento)
-                print("Columna esperada:", columna_unidades)
-                print("Valor crudo:", unidades_raw)
-                print("Unidades:", unidades)
-                print("Porcentaje:", porcentaje)
+                unidades_raw = df.at[
+                    idx,
+                    columna_unidades
+                ]
 
-                if Calculos.puede_calcular_cantidad_por_elemento(cantidad, unidades, porcentaje):
-                    cantidad_calc = Calculos.calcular_producto(unidades, porcentaje)
-                    print("Cantidad calculada:", cantidad_calc)
-                    df.at[idx, "CANTIDAD"] = cantidad_calc
-                    cantidad = cantidad_calc
+                unidades = Calculos.numero(
+                    unidades_raw
+                )
+
+                porcentaje = Calculos.numero(
+                    aportes.get(elemento, 0)
+                )
+
+                print("\nElemento:", elemento)
+                print(
+                    "Columna:",
+                    columna_unidades
+                )
+                print(
+                    "Valor crudo:",
+                    unidades_raw
+                )
+                print(
+                    "Unidades:",
+                    unidades
+                )
+                print(
+                    "Porcentaje:",
+                    porcentaje
+                )
+
+                # --------------------------------------------------
+                # Si tenemos unidades + porcentaje > 0,
+                # podemos obtener cantidad de producto.
+                # --------------------------------------------------
+
+                if Calculos.puede_calcular_cantidad_por_elemento(
+                    cantidad,
+                    unidades,
+                    porcentaje
+                ):
+
+                    cantidad_calculada = (
+                        Calculos.calcular_producto(
+                            unidades,
+                            porcentaje
+                        )
+                    )
+
+                    print(
+                        "Cantidad calculada:",
+                        cantidad_calculada
+                    )
+
+                    df.at[
+                        idx,
+                        "CANTIDAD"
+                    ] = cantidad_calculada
+
+                    cantidad = cantidad_calculada
+
                     break
 
-            # Después de calcular CANTIDAD, intentar recomputar DOSIS X HA y ÁREA si faltan
-            area = Calculos.numero(df.at[idx, "AREA"])
-            dosis = Calculos.numero(df.at[idx, "DOSIS X HA"])
+            # --------------------------------------------------
+            # Obtener AREA y DOSIS actuales
+            # --------------------------------------------------
 
-            # Recalcular DOSIS X HA si falta y AREA está disponible
-            if pd.isna(dosis) and not pd.isna(area) and not pd.isna(cantidad):
-                nueva_dosis = Calculos.calcular_dosis(area, cantidad)
-                print("Nueva dosis calculada:", nueva_dosis)
-                df.at[idx, "DOSIS X HA"] = nueva_dosis
+            area = Calculos.numero(
+                df.at[idx, "AREA"]
+            )
+
+            dosis = Calculos.numero(
+                df.at[idx, "DOSIS X HA"]
+            )
+
+            print("\nÁrea:", area)
+            print("Dosis:", dosis)
+            print("Cantidad:", cantidad)
+
+            # --------------------------------------------------
+            # Si tenemos AREA + CANTIDAD,
+            # calcular DOSIS.
+            # --------------------------------------------------
+
+            if (
+                pd.isna(dosis)
+                and not pd.isna(area)
+                and not pd.isna(cantidad)
+            ):
+
+                nueva_dosis = Calculos.calcular_dosis(
+                    area,
+                    cantidad
+                )
+
+                print(
+                    "Nueva dosis calculada:",
+                    nueva_dosis
+                )
+
+                df.at[
+                    idx,
+                    "DOSIS X HA"
+                ] = nueva_dosis
+
                 dosis = nueva_dosis
 
-            # Recalcular ÁREA si falta y DOSIS está disponible
-            if pd.isna(area) and not pd.isna(dosis) and not pd.isna(cantidad):
-                nueva_area = Calculos.calcular_area(cantidad, dosis)
-                print("Nueva área calculada:", nueva_area)
-                df.at[idx, "AREA"] = nueva_area
+            # --------------------------------------------------
+            # Si tenemos DOSIS + CANTIDAD,
+            # calcular AREA.
+            # --------------------------------------------------
 
-        print("\n================ FIN _calcular_producto ================\n")
+            if (
+                pd.isna(area)
+                and not pd.isna(dosis)
+                and not pd.isna(cantidad)
+            ):
+
+                nueva_area = Calculos.calcular_area(
+                    cantidad,
+                    dosis
+                )
+
+                print(
+                    "Nueva área calculada:",
+                    nueva_area
+                )
+
+                df.at[
+                    idx,
+                    "AREA"
+                ] = nueva_area
+
+        print(
+            "\n================ FIN _calcular_producto ================\n"
+        )
 
         return df
 
+
     # ==========================================================
-# Realizar cálculos
-# ==========================================================
-        
-def _calcular(self, df):
+    # ORQUESTADOR DE CÁLCULOS
+    # ==========================================================
 
-    print("\n")
-    print("====================================================")
-    print("                 INICIO DE CÁLCULOS")
-    print("====================================================")
+    def _calcular(self, df):
 
-    # 1. Resolver CANTIDAD cuando existe AREA + DOSIS
-    df = self._calcular_cantidad(df)
+        print("\n")
+        print("###################################################")
+        print("########### INICIO PROCESO DE CÁLCULOS ###########")
+        print("###################################################")
 
-    # 2. Resolver AREA cuando existe CANTIDAD + DOSIS
-    df = self._calcular_area(df)
+        # ------------------------------------------------------
+        # PASO 1
+        # AREA = CANTIDAD / DOSIS
+        # ------------------------------------------------------
 
-    # 3. Resolver DOSIS cuando existe AREA + CANTIDAD
-    df = self._calcular_dosis(df)
+        df = self._calcular_area(df)
 
-    # 4. Resolver CANTIDAD cuando el usuario suministró
-    #    unidades de N/P/K/S/MENORES
-    df = self._calcular_producto(df)
+        # ------------------------------------------------------
+        # PASO 2
+        # CANTIDAD = AREA × DOSIS
+        # ------------------------------------------------------
 
-    # 5. La CANTIDAD que acaba de aparecer puede permitir
-    #    calcular AREA
-    df = self._calcular_area(df)
+        df = self._calcular_cantidad(df)
 
-    # 6. La CANTIDAD + AREA puede permitir calcular DOSIS
-    df = self._calcular_dosis(df)
+        # ------------------------------------------------------
+        # PASO 3
+        # DOSIS = CANTIDAD / AREA
+        # ------------------------------------------------------
 
-    # 7. AHORA que CANTIDAD está completamente resuelta,
-    #    calcular las unidades de los elementos
-    df = self._calcular_elementos(df)
+        df = self._calcular_dosis(df)
 
-    print("\n")
-    print("====================================================")
-    print("                  FIN DE CÁLCULOS")
-    print("====================================================")
+        # ------------------------------------------------------
+        # PASO 4
+        # Calcular N/P/K/S/MENORES
+        # usando CANTIDAD × porcentaje
+        #
+        # PERO SIN SOBRESCRIBIR valores existentes.
+        # ------------------------------------------------------
 
-    return df
+        df = self._calcular_elementos(df)
+
+        # ------------------------------------------------------
+        # PASO 5
+        # Si CANTIDAD sigue vacía, intentar obtenerla
+        # a partir de las unidades suministradas.
+        # ------------------------------------------------------
+
+        df = self._calcular_producto(df)
+
+        # ------------------------------------------------------
+        # PASO 6
+        # El paso anterior pudo haber calculado CANTIDAD.
+        # Por eso volvemos a intentar completar AREA.
+        # ------------------------------------------------------
+
+        df = self._calcular_area(df)
+
+        # ------------------------------------------------------
+        # PASO 7
+        # Y volvemos a intentar completar DOSIS.
+        # ------------------------------------------------------
+
+        df = self._calcular_dosis(df)
+
+        # ------------------------------------------------------
+        # PASO 8
+        # Ahora que CANTIDAD puede haber sido calculada,
+        # completar unidades que todavía estén vacías.
+        #
+        # Los valores que ya existían NO se modifican.
+        # ------------------------------------------------------
+
+        df = self._calcular_elementos(df)
+
+        print("\n")
+        print("###################################################")
+        print("############ FIN PROCESO DE CÁLCULOS #############")
+        print("###################################################")
+        print("\n")
+
+        return df
     # ==========================================================
     # Validar información
     # ==========================================================
