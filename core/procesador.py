@@ -811,23 +811,39 @@ class Procesador:
         
 def _calcular(self, df):
 
-    df = self._calcular_area(df)
+    print("\n")
+    print("====================================================")
+    print("                 INICIO DE CÁLCULOS")
+    print("====================================================")
 
+    # 1. Resolver CANTIDAD cuando existe AREA + DOSIS
     df = self._calcular_cantidad(df)
 
-    df = self._calcular_dosis(df)
-
-    df = self._calcular_elementos(df)
-
-    df = self._calcular_producto(df)
-
-    # producto pudo completar área o dosis
+    # 2. Resolver AREA cuando existe CANTIDAD + DOSIS
     df = self._calcular_area(df)
 
+    # 3. Resolver DOSIS cuando existe AREA + CANTIDAD
     df = self._calcular_dosis(df)
 
-    # ahora sí todas las unidades quedan completas
+    # 4. Resolver CANTIDAD cuando el usuario suministró
+    #    unidades de N/P/K/S/MENORES
+    df = self._calcular_producto(df)
+
+    # 5. La CANTIDAD que acaba de aparecer puede permitir
+    #    calcular AREA
+    df = self._calcular_area(df)
+
+    # 6. La CANTIDAD + AREA puede permitir calcular DOSIS
+    df = self._calcular_dosis(df)
+
+    # 7. AHORA que CANTIDAD está completamente resuelta,
+    #    calcular las unidades de los elementos
     df = self._calcular_elementos(df)
+
+    print("\n")
+    print("====================================================")
+    print("                  FIN DE CÁLCULOS")
+    print("====================================================")
 
     return df
     # ==========================================================
