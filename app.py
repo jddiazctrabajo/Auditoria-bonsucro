@@ -739,99 +739,99 @@ if not df_consolidado.empty:
    # ==========================================================
 # DESCARGAS
 # ==========================================================
-
-st.markdown("---")
-
-st.markdown(
-    '<p class="section-title">💾 Descargas</p>',
-    unsafe_allow_html=True
-)
-
-# ----------------------------------------------------------
-# Crear las dos columnas de descarga
-# ----------------------------------------------------------
-
-col_d1, col_d2 = st.columns(2)
-
-
-with col_d1:
-
-    # ==========================================================
-    # COLUMNAS DEL CONSOLIDADO A EXPORTAR
-    # ==========================================================
-
-    columnas_exportar = [
-        "HACIENDA",
-        "FECHAS",
-        "SUERTE",
-        "AREA",
-        "PRODUCTO",
-        "VARIEDAD",
-        "ULT_CORTE",
-        "TCH_ACTUAL",
-        "DOSIS X HA",
-        "UNIDAD",
-        "CANTIDAD",
-        "UNIDAD/HA",
-        "UNIDADES - N",
-        "UNIDADES - P",
-        "UNIDADES - K",
-        "UNIDADES - S",
-        "UNIDADES - MENORES",
-        "PORC_N",
-        "PORC_P",
-        "PORC_K",
-        "PORC_S",
-        "PORC_MENORES",
-        "RAZON_SOCIAL",
-        "HACIENDA_ARCHIVO",
-        "ARCHIVO_ORIGEN",
-        "ESTADO",
-        "OBSERVACIONES"
-    ]
-
-    # ==========================================================
-    # Solo utilizar columnas que realmente existan
-    # ==========================================================
-
-    columnas_exportar = [
-        c
-        for c in columnas_exportar
-        if c in df_filtrado.columns
-    ]
-
-    # ==========================================================
-    # Crear DataFrame final para descarga
-    # ==========================================================
-
-    df_exportar = df_filtrado[columnas_exportar].copy()
-
-    # ==========================================================
-    # Botón de descarga
-    # ==========================================================
-
-    st.download_button(
-        label="📥 Descargar consolidado (.xlsx)",
-
-        data=to_excel_bytes(
-            df_exportar
-        ),
-
-        file_name=(
-            f"Consolidado_Fertilizacion_"
-            f"{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx"
-        ),
-
-        mime=(
-            "application/vnd.openxmlformats-officedocument"
-            ".spreadsheetml.sheet"
-        ),
-
-        use_container_width=True,
-
-        type="primary"
+    
+    st.markdown("---")
+    
+    st.markdown(
+        '<p class="section-title">💾 Descargas</p>',
+        unsafe_allow_html=True
     )
-
+    
+    # ----------------------------------------------------------
+    # Crear las dos columnas de descarga
+    # ----------------------------------------------------------
+    
+    col_d1, col_d2 = st.columns(2)
+    
+    
+    with col_d1:
+    
+        # ==========================================================
+        # COLUMNAS DEL CONSOLIDADO A EXPORTAR
+        # ==========================================================
+    
+        columnas_exportar = [
+            "HACIENDA",
+            "FECHAS",
+            "SUERTE",
+            "AREA",
+            "PRODUCTO",
+            "VARIEDAD",
+            "ULT_CORTE",
+            "TCH_ACTUAL",
+            "DOSIS X HA",
+            "UNIDAD",
+            "CANTIDAD",
+            "UNIDAD/HA",
+            "UNIDADES - N",
+            "UNIDADES - P",
+            "UNIDADES - K",
+            "UNIDADES - S",
+            "UNIDADES - MENORES",
+            "PORC_N",
+            "PORC_P",
+            "PORC_K",
+            "PORC_S",
+            "PORC_MENORES",
+            "RAZON_SOCIAL",
+            "HACIENDA_ARCHIVO",
+            "ARCHIVO_ORIGEN",
+            "ESTADO",
+            "OBSERVACIONES"
+        ]
+    
+        # ==========================================================
+        # Solo utilizar columnas que realmente existan
+        # ==========================================================
+    
+        columnas_exportar = [
+            c
+            for c in columnas_exportar
+            if c in df_filtrado.columns
+        ]
+    
+        # ==========================================================
+        # Crear DataFrame final para descarga
+        # ==========================================================
+    
+        df_exportar = df_filtrado[columnas_exportar].copy()
+    
+        # ==========================================================
+        # Botón de descarga
+        # ==========================================================
+    
+        st.download_button(
+            label="📥 Descargar consolidado (.xlsx)",
+    
+            data=to_excel_bytes(
+                df_exportar
+            ),
+    
+            file_name=(
+                f"Consolidado_Fertilizacion_"
+                f"{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx"
+            ),
+    
+            mime=(
+                "application/vnd.openxmlformats-officedocument"
+                ".spreadsheetml.sheet"
+            ),
+    
+            use_container_width=True,
+    
+            type="primary"
+        )
+    
 
 # ==========================================================
 # DESCARGAR ERRORES
