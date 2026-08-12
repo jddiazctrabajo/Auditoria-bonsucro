@@ -216,23 +216,28 @@ class Procesador:
     def _homologar(self, df):
         df = self.homologador.dataframe(df)
 
-        # Eliminar espacios en columnas tipo texto
-        columnas_texto = [
-            "HACIENDA",
-            "SUERTE",
-            "PRODUCTO",
-            "UNIDAD"
-        ]
+        # Normalizar columnas igual que prontuario y maestro
+        import unicodedata
+        
+        def normalizar_texto(texto):
+            """Mismo método que Prontuario y Maestro"""
+            if pd.isna(texto):
+                return ""
+            texto = str(texto).upper().strip()
+            texto = unicodedata.normalize("NFKD", texto)
+            texto = "".join(c for c in texto if not unicodedata.combining(c))
+            texto = " ".join(texto.split())
+            return texto
 
-        for col in columnas_texto:
+        # Normalizar campos clave para el merge
+        columnas_normalizar = ["HACIENDA", "SUERTE", "PRODUCTO"]
+        
+        for col in columnas_normalizar:
             if col in df.columns:
-                df[col] = (
-                    df[col]
-                    .fillna("")
-                    .astype(str)
-                    .str.strip()
-                    .str.upper()  # ← AGREGAR: Convertir a mayúsculas
-                )
+                print(f"DEBUG: Normalizando {col}")
+                print(f"  Antes: {df[col].head(3).tolist()}")
+                df[col] = df[col].apply(normalizar_texto)
+                print(f"  Después: {df[col].head(3).tolist()}")
 
         # Normalizar nombres de columnas: eliminar espacios, unificar guiones y colapsar espacios, manejar caracteres invisibles
         import re
@@ -311,6 +316,13 @@ class Procesador:
 
         prontuario = prontuario[columnas]
 
+        print("\nDEBUG - Antes del merge con prontuario:")
+        print(f"  Registros en df: {len(df)}")
+        print(f"  Haciendas únicas en df: {df['HACIENDA'].nunique()}")
+        print(f"  Haciendas en prontuario: {prontuario['HACIENDA'].nunique()}")
+        print(f"  Primeras haciendas en df: {df['HACIENDA'].head(3).tolist()}")
+        print(f"  Primeras haciendas en prontuario: {prontuario['HACIENDA'].head(3).tolist()}")
+
         df = df.merge(
 
             prontuario,
@@ -320,6 +332,10 @@ class Procesador:
             how="left"
 
         )
+
+        print("\nDEBUG - Después del merge con prontuario:")
+        print(f"  Registros con AREA_PRONTUARIO: {df['AREA_PRONTUARIO'].notna().sum()}")
+        print(f"  Registros sin AREA_PRONTUARIO: {df['AREA_PRONTUARIO'].isna().sum()}")
 
         # ---------------------------------------------------
         # Completar área solamente cuando venga vacía
@@ -391,14 +407,23 @@ class Procesador:
 
         })
 
-        # Normalizar PRODUCTO en maestro (mayúsculas y sin espacios extras)
-        maestro["PRODUCTO"] = (
-            maestro["PRODUCTO"]
-            .fillna("")
-            .astype(str)
-            .str.strip()
-            .str.upper()
-        )
+        # Normalizar PRODUCTO en maestro usando el mismo método que prontuario
+        import unicodedata
+        
+        def normalizar_texto(texto):
+            """Mismo método que Prontuario"""
+            if pd.isna(texto):
+                return ""
+            texto = str(texto).upper().strip()
+            texto = unicodedata.normalize("NFKD", texto)
+            texto = "".join(c for c in texto if not unicodedata.combining(c))
+            texto = " ".join(texto.split())
+            return texto
+        
+        maestro["PRODUCTO"] = maestro["PRODUCTO"].apply(normalizar_texto)
+
+        print("\nDEBUG - Maestro después de normalizar PRODUCTO:")
+        print(maestro[["PRODUCTO", "PORC_N"]].head())
 
         columnas = [
 
@@ -418,6 +443,14 @@ class Procesador:
 
         maestro = maestro[columnas]
 
+        print("\nDEBUG - Antes del merge con maestro:")
+        print(f"  Registros en df: {len(df)}")
+        print(f"  Productos únicos en df: {df['PRODUCTO'].nunique()}")
+        print(f"  Productos en maestro: {len(maestro)}")
+        print(f"  Productos únicos en maestro: {maestro['PRODUCTO'].nunique()}")
+        print(f"  Primeros productos en df: {df['PRODUCTO'].head(3).tolist()}")
+        print(f"  Primeros productos en maestro: {maestro['PRODUCTO'].head(3).tolist()}")
+
         df = df.merge(
 
             maestro,
@@ -427,6 +460,11 @@ class Procesador:
             how="left"
 
         )
+
+        print("\nDEBUG - Después del merge con maestro:")
+        print(f"  Registros con PORC_N: {df['PORC_N'].notna().sum()}")
+        print(f"  Registros sin PORC_N: {df['PORC_N'].isna().sum()}")
+        print(f"  Primeros PORC_N: {df['PORC_N'].head(5).tolist()}")
 
         return df
 
