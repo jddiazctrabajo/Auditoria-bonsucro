@@ -559,67 +559,69 @@ class Procesador:
 # Calcular Cantidad total (kg/ha × ha)
 # ==========================================================
 
-        def _calcular_elementos(self, df):
+    def _calcular_elementos(self, df):
 
-    elementos = {
-        "N": "PORC_N",
-        "P": "PORC_P",
-        "K": "PORC_K",
-        "S": "PORC_S",
-        "MENORES": "PORC_MENORES"
-    }
+        print("\n================ INICIO _calcular_elementos ================\n")
 
-    def numero(valor):
-        if pd.isna(valor):
-            return pd.NA
+        print("Antes del cálculo:")
+        print(df[[
+            "UNIDADES - N",
+            "UNIDADES - P",
+            "UNIDADES - K",
+            "CANTIDAD"
+        ]].head())
 
-        if isinstance(valor, (int, float)):
-            return valor
+        elementos = {
+            "N": "PORC_N",
+            "P": "PORC_P",
+            "K": "PORC_K",
+            "S": "PORC_S",
+            "MENORES": "PORC_MENORES"
+        }
 
-        valor = str(valor).strip()
-
-        if not valor:
-            return pd.NA
-
-        # Decimal colombiano
-        valor = valor.replace(".", "").replace(",", ".")
-
-        return pd.to_numeric(valor, errors="coerce")
-
-    df["CANTIDAD"] = df["CANTIDAD"].apply(numero)
-
-    for elemento, columna in elementos.items():
-
-        if columna not in df.columns:
-            continue
-
-        nombre_salida = f"UNIDADES - {elemento}"
-
-        if nombre_salida not in df.columns:
-            df[nombre_salida] = pd.NA
-
-        df[columna] = df[columna].apply(numero)
-
-        df[nombre_salida] = df[nombre_salida].apply(numero)
-
-        mascara = (
-            df[nombre_salida].isna()
-            &
-            df["CANTIDAD"].notna()
-            &
-            df[columna].notna()
-            &
-            (df[columna] > 0)
+        # Asegurar que CANTIDAD sea numérica
+        df["CANTIDAD"] = pd.to_numeric(
+            df["CANTIDAD"],
+            errors="coerce"
         )
 
-        df.loc[mascara, nombre_salida] = (
-            df.loc[mascara, "CANTIDAD"]
-            *
-            df.loc[mascara, columna]
-            / 100
-        ).round(4)
+        for elemento, columna in elementos.items():
 
-    return df
+            if columna not in df.columns:
+                print(f"⚠️  Columna {columna} no encontrada, saltando {elemento}")
+                continue
+
+            # Convertir porcentaje a numérico
+            df[columna] = pd.to_numeric(
+                df[columna],
+                errors="coerce"
+            )
+
+            nombre_salida = f"UNIDADES - {elemento}"
+
+            # Convertir la columna existente a numérica
+            df[nombre_salida] = pd.to_numeric(
+                df[nombre_salida],
+                errors="coerce"
+            )
+
+            # Calcular únicamente donde el valor esté vacío
+            mascara = (
+                df[nombre_salida].isna()
+                &
+                df["CANTIDAD"].notna()
+                &
+                df[columna].notna()
+            )
+
+            print(f"\n{nombre_salida} - Filas calculadas: {mascara.sum()}")
+
+            df.loc[mascara, nombre_salida] = (
+                df.loc[mascara, "CANTIDAD"]
+                *
+                df.loc[mascara, columna]
+                / 100
+            ).round(4)
 
         print("\nDespués del cálculo:")
         print(df[[
