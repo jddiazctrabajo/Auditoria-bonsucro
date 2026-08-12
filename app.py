@@ -832,44 +832,44 @@ if not df_consolidado.empty:
             type="primary"
         )
     
-
-# ==========================================================
-# DESCARGAR ERRORES
-# ==========================================================
-
-with col_d2:
-
-    if errores_list:
-
-        df_errores = pd.DataFrame(
-            errores_list
-        )
-
-        st.download_button(
-            label="📥 Descargar errores (.xlsx)",
-
-            data=to_excel_bytes(
-                df_errores
-            ),
-
-            file_name=(
-                f"Errores_Lectura_"
-                f"{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx"
-            ),
-
-            mime=(
-                "application/vnd.openxmlformats-officedocument"
-                ".spreadsheetml.sheet"
-            ),
-
-            use_container_width=True
-        )
-
-    else:
-
-        st.success(
-            "✅ No hubo errores de lectura"
-        )
+    
+    # ==========================================================
+    # DESCARGAR ERRORES
+    # ==========================================================
+    
+    with col_d2:
+    
+        if errores_list:
+    
+            df_errores = pd.DataFrame(
+                errores_list
+            )
+    
+            st.download_button(
+                label="📥 Descargar errores (.xlsx)",
+    
+                data=to_excel_bytes(
+                    df_errores
+                ),
+    
+                file_name=(
+                    f"Errores_Lectura_"
+                    f"{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx"
+                ),
+    
+                mime=(
+                    "application/vnd.openxmlformats-officedocument"
+                    ".spreadsheetml.sheet"
+                ),
+    
+                use_container_width=True
+            )
+    
+        else:
+    
+            st.success(
+                "✅ No hubo errores de lectura"
+            )
 
     # ---- Referencia cruzada con maestro ----
     if fertilizantes_df is not None and "PRODUCTO" in df_filtrado.columns:
