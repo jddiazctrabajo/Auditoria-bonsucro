@@ -561,82 +561,174 @@ class Procesador:
 
     def _calcular_elementos(self, df):
 
-        print("\n================ INICIO _calcular_elementos ================\n")
+    print("\n")
+    print("====================================================")
+    print("           INICIO _calcular_elementos")
+    print("====================================================")
 
-        print("Antes del cálculo:")
-        print(df[[
-            "UNIDADES - N",
-            "UNIDADES - P",
-            "UNIDADES - K",
-            "CANTIDAD"
-        ]].head())
+    elementos = {
+        "N": "PORC_N",
+        "P": "PORC_P",
+        "K": "PORC_K",
+        "S": "PORC_S",
+        "MENORES": "PORC_MENORES"
+    }
 
-        elementos = {
-            "N": "PORC_N",
-            "P": "PORC_P",
-            "K": "PORC_K",
-            "S": "PORC_S",
-            "MENORES": "PORC_MENORES"
-        }
+    # --------------------------------------------------
+    # Convertir CANTIDAD a número
+    # --------------------------------------------------
 
-        # Asegurar que CANTIDAD sea numérica
-        df["CANTIDAD"] = pd.to_numeric(
-            df["CANTIDAD"],
+    if "CANTIDAD" not in df.columns:
+        print("ERROR: No existe columna CANTIDAD")
+        return df
+
+    df["CANTIDAD"] = pd.to_numeric(
+        df["CANTIDAD"],
+        errors="coerce"
+    )
+
+    # --------------------------------------------------
+    # Procesar cada elemento
+    # --------------------------------------------------
+
+    for elemento, columna_porcentaje in elementos.items():
+
+        nombre_salida = f"UNIDADES - {elemento}"
+
+        print("\n--------------------------------------------------")
+        print("ELEMENTO:", elemento)
+        print("PORCENTAJE:", columna_porcentaje)
+        print("SALIDA:", nombre_salida)
+
+        # Si no existe porcentaje, no podemos calcular
+        if columna_porcentaje not in df.columns:
+            print(">> No existe", columna_porcentaje)
+            continue
+
+        # --------------------------------------------------
+        # Convertir porcentaje
+        # --------------------------------------------------
+
+        df[columna_porcentaje] = pd.to_numeric(
+            df[columna_porcentaje],
             errors="coerce"
         )
 
-        for elemento, columna in elementos.items():
+        # --------------------------------------------------
+        # Crear columna si no existe
+        # --------------------------------------------------
 
-            if columna not in df.columns:
-                print(f"⚠️  Columna {columna} no encontrada, saltando {elemento}")
-                continue
+        if nombre_salida not in df.columns:
 
-            # Convertir porcentaje a numérico
-            df[columna] = pd.to_numeric(
-                df[columna],
-                errors="coerce"
-            )
+            print(">> La columna no existe. Se crea.")
 
-            nombre_salida = f"UNIDADES - {elemento}"
+            df[nombre_salida] = np.nan
 
-            # Convertir la columna existente a numérica
-            df[nombre_salida] = pd.to_numeric(
-                df[nombre_salida],
-                errors="coerce"
-            )
+        # --------------------------------------------------
+        # Convertir unidades existentes a número
+        # --------------------------------------------------
 
-            # Calcular únicamente donde el valor esté vacío
-            mascara = (
-                df[nombre_salida].isna()
-                &
-                df["CANTIDAD"].notna()
-                &
-                df[columna].notna()
-            )
+        df[nombre_salida] = pd.to_numeric(
+            df[nombre_salida],
+            errors="coerce"
+        )
 
-            print(f"\n{nombre_salida} - Filas calculadas: {mascara.sum()}")
+        # --------------------------------------------------
+        # Identificar filas que YA tienen unidades
+        # --------------------------------------------------
 
-            df.loc[mascara, nombre_salida] = (
-                df.loc[mascara, "CANTIDAD"]
-                *
-                df.loc[mascara, columna]
-                / 100
-            ).round(4)
+        tiene_unidad = df[nombre_salida].notna()
 
-        print("\nDespués del cálculo:")
-        print(df[[
-            "UNIDADES - N",
-            "UNIDADES - P",
-            "UNIDADES - K",
-            "UNIDADES - S",
-            "UNIDADES - MENORES",
-            "CANTIDAD"
-        ]].head())
+        # --------------------------------------------------
+        # Identificar filas que pueden calcularse
+        # --------------------------------------------------
 
-        print("\n================ FIN _calcular_elementos ================\n")
+        puede_calcular = (
+            df[nombre_salida].isna()
+            &
+            df["CANTIDAD"].notna()
+            &
+            df[columna_porcentaje].notna()
+        )
 
-        return df
+        # --------------------------------------------------
+        # CALCULAR
+        # --------------------------------------------------
 
+        calculado = (
+            df["CANTIDAD"]
+            *
+            df[columna_porcentaje]
+            /
+            100
+        ).round(4)
+
+        # --------------------------------------------------
+        # IMPORTANTE:
+        # SOLO llenar donde estaba vacío
+        # NUNCA sobrescribir lo que ya tenía el usuario
+        # --------------------------------------------------
+
+        df.loc[puede_calcular, nombre_salida] = (
+            calculado.loc[puede_calcular]
+        )
+
+        # --------------------------------------------------
+        # Si porcentaje = 0 y no había unidad,
+        # el aporte matemáticamente es 0
+        # --------------------------------------------------
+
+        porcentaje_cero = (
+            df[nombre_salida].isna()
+            &
+            df[columna_porcentaje].eq(0)
+        )
+
+        df.loc[porcentaje_cero, nombre_salida] = 0
+
+        # --------------------------------------------------
+        # DEBUG
+        # --------------------------------------------------
+
+        print("Unidades existentes antes:", tiene_unidad.sum())
+        print("Filas calculadas:", puede_calcular.sum())
+        print("Filas con porcentaje 0:", porcentaje_cero.sum())
+        print("Unidades finales:", df[nombre_salida].notna().sum())
+
+    # --------------------------------------------------
+    # VERIFICACIÓN FINAL
+    # --------------------------------------------------
+
+    columnas_unidades = [
+        "UNIDADES - N",
+        "UNIDADES - P",
+        "UNIDADES - K",
+        "UNIDADES - S",
+        "UNIDADES - MENORES"
+    ]
+
+    columnas_existentes = [
+        c for c in columnas_unidades
+        if c in df.columns
+    ]
+
+    print("\n====================================================")
+    print("RESULTADO FINAL DE UNIDADES")
+    print("====================================================")
+
+    print(
+        df[
+            ["PRODUCTO", "CANTIDAD", "PORC_N", "PORC_P",
+             "PORC_K", "PORC_S", "PORC_MENORES"]
+            + columnas_existentes
+        ].head(20).to_string()
+    )
+
+    print("\n====================================================")
+    print("           FIN _calcular_elementos")
+    print("====================================================")
+
+    return df
 # ==========================================================
 # Calcular cantidad del producto a partir de unidades
 # ==========================================================
