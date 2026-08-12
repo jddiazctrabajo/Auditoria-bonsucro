@@ -557,20 +557,20 @@ class Procesador:
         )
 
         # Calcular únicamente donde el valor esté vacío
-        mascara = (
-            df[nombre_salida].isna()
-            &
-            df["CANTIDAD"].notna()
-            &
-            df[columna].notna()
-        )
-
-        df.loc[mascara, nombre_salida] = (
-            df.loc[mascara, "CANTIDAD"]
-            *
-            df.loc[mascara, columna]
-            / 100
-        ).round(4)
+            mascara = (
+                df[nombre_salida].isna()
+                &
+                df["CANTIDAD"].notna()
+                &
+                df[columna].notna()
+            )
+    
+            df.loc[mascara, nombre_salida] = (
+                df.loc[mascara, "CANTIDAD"]
+                *
+                df.loc[mascara, columna]
+                / 100
+            ).round(4)
 
         print(f"\n{nombre_salida}")
         print("Filas calculadas:", mascara.sum())
