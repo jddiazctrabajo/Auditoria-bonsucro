@@ -935,7 +935,7 @@ if df_consolidado.empty and not detalles_list:
         ">
             <div style="font-size: 4rem; margin-bottom: 1rem;">🌿</div>
             <h3 style="color: #0d4b3c; margin-bottom: 0.5rem;">
-                Bienvenido al Sistema de Fertilización
+                Modulo fertilización
             </h3>
             <p style="color: #6b8f83; font-size: 0.95rem;">
                 Suba archivos Excel o procese los datos desde la carpeta
@@ -951,7 +951,7 @@ if df_consolidado.empty and not detalles_list:
 
 st.markdown("""
 <div class="footer">
-    🌿 Sistema de Trazabilidad de Fertilización
+    Modulo fertilización
     · Proyecto Fertilización · 2026
 </div>
 """, unsafe_allow_html=True)
