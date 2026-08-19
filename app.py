@@ -51,120 +51,100 @@ st.markdown(
     }
 
 
-    /* -------------------------------------------------------
-       Header
-       ------------------------------------------------------- */
+/* =======================================================
+   HEADER
+   ======================================================= */
 
-    .main-header {
-        background: linear-gradient(
-            135deg,
-            #0d4b3c 0%,
-            #1a7a5e 50%,
-            #2dba8e 100%
-        );
+.main-header {
+    background: linear-gradient(
+        135deg,
+        #0d4b3c 0%,
+        #1a7a5e 100%
+    );
 
-        padding: 2rem 2.5rem;
-        border-radius: 16px;
-        margin-bottom: 1.5rem;
+    padding: 1.5rem 2rem;
+    border-radius: 12px;
+    margin-bottom: 1.2rem;
 
-        box-shadow:
-            0 8px 32px rgba(13, 75, 60, 0.25);
-    }
+    box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+}
 
-    .main-header h1 {
-        color: white;
-        font-size: 1.8rem;
-        font-weight: 700;
-        margin: 0;
-    }
+.main-header h1 {
+    color: white;
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin: 0;
+}
 
-    .main-header p {
-        color: rgba(255,255,255,0.85);
-        font-size: 0.95rem;
-        margin: 0.3rem 0 0 0;
-    }
+.main-header p {
+    color: rgba(255,255,255,0.85);
+    font-size: 0.85rem;
+    margin: 0.3rem 0 0 0;
+}
 
 
-    /* -------------------------------------------------------
-       Sidebar
-       ------------------------------------------------------- */
+/* =======================================================
+   SIDEBAR
+   ======================================================= */
 
-    [data-testid="stSidebar"] {
-        background: linear-gradient(
-            180deg,
-            #0d4b3c 0%,
-            #0a3a2e 100%
-        );
-    }
+[data-testid="stSidebar"] {
+    background: #0d4b3c;
+}
 
-    [data-testid="stSidebar"] * {
-        color: white !important;
-    }
+[data-testid="stSidebar"] * {
+    color: white !important;
+}
 
 
-    /* -------------------------------------------------------
-       Date input
-       ------------------------------------------------------- */
+/* =======================================================
+   FECHAS
+   ======================================================= */
 
-    [data-testid="stSidebar"] [data-testid="stDateInput"] input {
-        background-color: white !important;
-        color: #222222 !important;
-        border: 1px solid #cccccc !important;
-        border-radius: 8px !important;
-    }
-
-    [data-testid="stSidebar"] [data-testid="stDateInput"] input::placeholder {
-        color: #666666 !important;
-    }
-
-    [data-testid="stSidebar"] [data-testid="stDateInput"] button {
-        background-color: white !important;
-        color: #222222 !important;
-    }
+[data-testid="stSidebar"] [data-testid="stDateInput"] input {
+    background-color: white !important;
+    color: #222222 !important;
+    border: 1px solid #cccccc !important;
+    border-radius: 6px !important;
+}
 
 
-    /* -------------------------------------------------------
-       Secciones
-       ------------------------------------------------------- */
+/* =======================================================
+   TÍTULOS DE SECCIÓN
+   ======================================================= */
 
-    .section-title {
-        font-size: 0.5rem;
-        font-weight: 600;
-        color: #0d4b3c;
+.section-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #0d4b3c;
 
-        margin-top: 0.5rem;
-        margin-bottom: 0.8rem;
+    margin-top: 0.8rem;
+    margin-bottom: 0.6rem;
 
-        padding-bottom: 0.4rem;
+    padding-bottom: 0.3rem;
 
-        border-bottom: 2px solid #2dba8e;
+    border-bottom: 1px solid #2dba8e;
 
-        display: inline-block;
-    }
+    display: inline-block;
+}
 
 
-    /* -------------------------------------------------------
-       Footer
-       ------------------------------------------------------- */
+/* =======================================================
+   FOOTER
+   ======================================================= */
 
-    .footer {
-        text-align: center;
+.footer {
+    text-align: center;
 
-        padding: 1.5rem 0;
+    padding: 1rem 0;
 
-        color: #a0b5ad;
+    color: #8a9f97;
 
-        font-size: 0.8rem;
+    font-size: 0.75rem;
 
-        margin-top: 2rem;
+    margin-top: 2rem;
 
-        border-top: 1px solid #e8efe9;
-    }
-
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+    border-top: 1px solid #e8efe9;
+}
 
 
 # ===========================================================
