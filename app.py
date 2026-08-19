@@ -499,13 +499,13 @@ def guardar_resultados(
 # HEADER
 # ===========================================================
 
-st.markdown(
+
  st.title("🌿 Auditoría Bonsucro")
 
 st.caption(
     "Procesamiento, validación y consolidación "
     "de datos de fertilización agrícola"
-)
+
 
 # ===========================================================
 # CARGAR MAESTRO
