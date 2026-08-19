@@ -51,101 +51,101 @@ st.markdown(
     }
 
 
-/* =======================================================
-   HEADER
-   ======================================================= */
-
-.main-header {
-    background: linear-gradient(
-        135deg,
-        #0d4b3c 0%,
-        #1a7a5e 100%
-    );
-
-    padding: 1.5rem 2rem;
-    border-radius: 12px;
-    margin-bottom: 1.2rem;
-
-    box-shadow: 0 4px 15px rgba(0,0,0,0.12);
-}
-
-.main-header h1 {
-    color: white;
-    font-size: 1.6rem;
-    font-weight: 700;
-    margin: 0;
-}
-
-.main-header p {
-    color: rgba(255,255,255,0.85);
-    font-size: 0.85rem;
-    margin: 0.3rem 0 0 0;
-}
-
-
-/* =======================================================
-   SIDEBAR
-   ======================================================= */
-
-[data-testid="stSidebar"] {
-    background: #0d4b3c;
-}
-
-[data-testid="stSidebar"] * {
-    color: white !important;
-}
-
-
-/* =======================================================
-   FECHAS
-   ======================================================= */
-
-[data-testid="stSidebar"] [data-testid="stDateInput"] input {
-    background-color: white !important;
-    color: #222222 !important;
-    border: 1px solid #cccccc !important;
-    border-radius: 6px !important;
-}
-
-
-/* =======================================================
-   TÍTULOS DE SECCIÓN
-   ======================================================= */
-
-.section-title {
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: #0d4b3c;
-
-    margin-top: 0.8rem;
-    margin-bottom: 0.6rem;
-
-    padding-bottom: 0.3rem;
-
-    border-bottom: 1px solid #2dba8e;
-
-    display: inline-block;
-}
-
-
-/* =======================================================
-   FOOTER
-   ======================================================= */
-
-.footer {
-    text-align: center;
-
-    padding: 1rem 0;
-
-    color: #8a9f97;
-
-    font-size: 0.75rem;
-
-    margin-top: 2rem;
-
-    border-top: 1px solid #e8efe9;
-}
-
+    /* =======================================================
+       HEADER
+       ======================================================= */
+    
+    .main-header {
+        background: linear-gradient(
+            135deg,
+            #0d4b3c 0%,
+            #1a7a5e 100%
+        );
+    
+        padding: 1.5rem 2rem;
+        border-radius: 12px;
+        margin-bottom: 1.2rem;
+    
+        box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+    }
+    
+    .main-header h1 {
+        color: white;
+        font-size: 1.6rem;
+        font-weight: 700;
+        margin: 0;
+    }
+    
+    .main-header p {
+        color: rgba(255,255,255,0.85);
+        font-size: 0.85rem;
+        margin: 0.3rem 0 0 0;
+    }
+    
+    
+    /* =======================================================
+       SIDEBAR
+       ======================================================= */
+    
+    [data-testid="stSidebar"] {
+        background: #0d4b3c;
+    }
+    
+    [data-testid="stSidebar"] * {
+        color: white !important;
+    }
+    
+    
+    /* =======================================================
+       FECHAS
+       ======================================================= */
+    
+    [data-testid="stSidebar"] [data-testid="stDateInput"] input {
+        background-color: white !important;
+        color: #222222 !important;
+        border: 1px solid #cccccc !important;
+        border-radius: 6px !important;
+    }
+    
+    
+    /* =======================================================
+       TÍTULOS DE SECCIÓN
+       ======================================================= */
+    
+    .section-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #0d4b3c;
+    
+        margin-top: 0.8rem;
+        margin-bottom: 0.6rem;
+    
+        padding-bottom: 0.3rem;
+    
+        border-bottom: 1px solid #2dba8e;
+    
+        display: inline-block;
+    }
+    
+    
+    /* =======================================================
+       FOOTER
+       ======================================================= */
+    
+    .footer {
+        text-align: center;
+    
+        padding: 1rem 0;
+    
+        color: #8a9f97;
+    
+        font-size: 0.75rem;
+    
+        margin-top: 2rem;
+    
+        border-top: 1px solid #e8efe9;
+    }
+    
 
 # ===========================================================
 # CONSTANTES
