@@ -948,98 +948,91 @@ with tab_procesar:
         )
 
 
+# ===========================================================
+# RESUMEN GENERAL
+# ===========================================================
 
-        
-        n_archivos = (
+if not df_consolidado.empty:
 
-            df_consolidado[
-                "ARCHIVO_ORIGEN"
-            ].nunique()
+    # =======================================================
+    # MÉTRICAS GENERALES
+    # =======================================================
 
-            if "ARCHIVO_ORIGEN"
-            in df_consolidado.columns
+    n_archivos = (
+        df_consolidado["ARCHIVO_ORIGEN"].nunique()
+        if "ARCHIVO_ORIGEN" in df_consolidado.columns
+        else 0
+    )
 
-            else 0
+    n_registros = len(df_consolidado)
+
+    n_productos = (
+        df_consolidado["PRODUCTO"].nunique()
+        if "PRODUCTO" in df_consolidado.columns
+        else 0
+    )
+
+    n_haciendas = (
+        df_consolidado["HACIENDA"]
+        .dropna()
+        .nunique()
+        if "HACIENDA" in df_consolidado.columns
+        else 0
+    )
+
+    n_errores = len(errores_list)
+
+    # =======================================================
+    # TARJETAS
+    # =======================================================
+
+    st.markdown(
+        '<p class="section-title">📈 Resumen General</p>',
+        unsafe_allow_html=True
+    )
+
+    c1, c2, c3, c4, c5 = st.columns(5)
+
+    with c1:
+        st.metric(
+            label="📄 Archivos",
+            value=n_archivos
         )
 
-
-        n_registros = len(
-            df_consolidado
+    with c2:
+        st.metric(
+            label="📋 Registros",
+            value=n_registros
         )
 
-
-        n_productos = (
-
-            df_consolidado[
-                "PRODUCTO"
-            ].nunique()
-
-            if "PRODUCTO"
-            in df_consolidado.columns
-
-            else 0
+    with c3:
+        st.metric(
+            label="🧪 Productos",
+            value=n_productos
         )
 
-
-        n_haciendas = (
-
-            df_consolidado[
-                "HACIENDA"
-            ]
-            .dropna()
-            .nunique()
-
-            if "HACIENDA"
-            in df_consolidado.columns
-
-            else 0
+    with c4:
+        st.metric(
+            label="🏡 Haciendas",
+            value=n_haciendas
         )
 
-
-            n_errores = len(
-            errores_list
+    with c5:
+        st.metric(
+            label="⚠️ Errores",
+            value=n_errores
         )
 
+else:
 
-        c1, c2, c3, c4, c5 = (
-            st.columns(5)
-        )
+    # =======================================================
+    # SIN DATOS
+    # =======================================================
 
-
-        with c1:
-            st.metric(
-                "📄 Archivos",
-                n_archivos
-            )
-
-
-        with c2:
-            st.metric(
-                "📋 Registros",
-                n_registros
-            )
-
-
-        with c3:
-            st.metric(
-                "🧪 Productos",
-                n_productos
-            )
-
-
-        with c4:
-            st.metric(
-                "🏡 Haciendas",
-                n_haciendas
-            )
-
-
-        with c5:
-            st.metric(
-                "⚠️ Errores",
-                n_errores
-            )
-
+    st.info(
+        "📭 No hay datos consolidados para visualizar. "
+        "Ve a la pestaña **⚙️ Procesar** para cargar o procesar archivos."
+    )
     # =======================================================
     # VALIDACIÓN
     # =======================================================
