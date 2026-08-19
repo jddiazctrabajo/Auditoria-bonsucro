@@ -499,22 +499,11 @@ def guardar_resultados(
 # HEADER
 # ===========================================================
 
-st.markdown(
-    """
-    <div class="main-header">
+st.header("🌿 Auditoría Bonsucro")
 
-        <h1>
-            🌿 Auditoría Bonsucro
-        </h1>
-
-        <p>
-            Procesamiento, validación y consolidación
-            de datos de fertilización agrícola
-        </p>
-
-    </div>
-    """,
-    unsafe_allow_html=True
+st.write(
+    "Procesamiento, validación y consolidación "
+    "de datos de fertilización agrícola"
 )
 
 
