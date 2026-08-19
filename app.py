@@ -494,19 +494,16 @@ def guardar_resultados(
         detalles_list
     )
 
-
 # ===========================================================
 # HEADER
 # ===========================================================
 
 st.title("🌿 Auditoría Bonsucro")
 
-    st.caption(
-        "Procesamiento, validación y consolidación "
-        "de datos de fertilización agrícola"
-    )
-
-
+st.caption(
+    "Procesamiento, validación y consolidación "
+    "de datos de fertilización agrícola"
+)
 # ===========================================================
 # CARGAR MAESTRO
 # ===========================================================
