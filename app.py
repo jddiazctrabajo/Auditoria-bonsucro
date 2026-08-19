@@ -128,11 +128,11 @@ st.markdown(
        ------------------------------------------------------- */
 
     .section-title {
-        font-size: 0.8rem;
+        font-size: 0.5rem;
         font-weight: 600;
         color: #0d4b3c;
 
-        margin-top: 0.9rem;
+        margin-top: 0.5rem;
         margin-bottom: 0.8rem;
 
         padding-bottom: 0.4rem;
