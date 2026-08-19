@@ -947,49 +947,7 @@ with tab_procesar:
             "Resumen"
         )
 
-        n_errores = len(
-            errores_list
-        )
 
-
-        c1, c2, c3, c4, c5 = (
-            st.columns(5)
-        )
-
-
-        with c1:
-            st.metric(
-                "📄 Archivos",
-                n_archivos
-            )
-
-
-        with c2:
-            st.metric(
-                "📋 Registros",
-                n_registros
-            )
-
-
-        with c3:
-            st.metric(
-                "🧪 Productos",
-                n_productos
-            )
-
-
-        with c4:
-            st.metric(
-                "🏡 Haciendas",
-                n_haciendas
-            )
-
-
-        with c5:
-            st.metric(
-                "⚠️ Errores",
-                n_errores
-            )
 
         
         n_archivos = (
@@ -1037,6 +995,50 @@ with tab_procesar:
             else 0
         )
 
+
+            n_errores = len(
+            errores_list
+        )
+
+
+        c1, c2, c3, c4, c5 = (
+            st.columns(5)
+        )
+
+
+        with c1:
+            st.metric(
+                "📄 Archivos",
+                n_archivos
+            )
+
+
+        with c2:
+            st.metric(
+                "📋 Registros",
+                n_registros
+            )
+
+
+        with c3:
+            st.metric(
+                "🧪 Productos",
+                n_productos
+            )
+
+
+        with c4:
+            st.metric(
+                "🏡 Haciendas",
+                n_haciendas
+            )
+
+
+        with c5:
+            st.metric(
+                "⚠️ Errores",
+                n_errores
+            )
 
     # =======================================================
     # VALIDACIÓN
