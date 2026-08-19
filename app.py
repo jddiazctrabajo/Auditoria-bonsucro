@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Sistema de Trazabilidad de Fertilización
+Auditoria Bonsucro
 Aplicación Streamlit
 
 @author: jddiazc
@@ -21,7 +21,7 @@ from core.validaciones import Validador
 # ===========================================================
 
 st.set_page_config(
-    page_title="Sistema de Trazabilidad de Fertilización",
+    page_title="Trazabilidad fertilización",
     page_icon="🌿",
     layout="wide",
     initial_sidebar_state="expanded"
