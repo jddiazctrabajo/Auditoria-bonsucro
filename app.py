@@ -406,7 +406,7 @@ with st.sidebar:
 
     st.markdown("---")
     st.markdown(
-        f"📅 {datetime.now().strftime('%d/%m/%Y %H:%M')}"
+        f"📅 {datetime.now().strftime('%d/%m/%Y')}"
     )
 
 
