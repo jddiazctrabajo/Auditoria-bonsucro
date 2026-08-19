@@ -501,8 +501,7 @@ def guardar_resultados(
 st.title("🌿 Auditoría Bonsucro")
 
 st.caption(
-    "Procesamiento, validación y consolidación "
-    "de datos de fertilización agrícola"
+    "Procesamiento, validación y consolidación de aplicación de productos agrícolas"
 )
 # ===========================================================
 # CARGAR MAESTRO
@@ -700,8 +699,8 @@ with st.sidebar:
 
 tab_visualizador, tab_procesar = st.tabs(
     [
-        "📊 Visualizador",
-        "⚙️ Procesar"
+        "⚙️ Procesar",
+        "📊 Visualizador"
     ]
 )
 
@@ -945,7 +944,7 @@ with tab_procesar:
         st.divider()
 
         st.subheader(
-            "📈 Resumen"
+            "Resumen"
         )
 
 
