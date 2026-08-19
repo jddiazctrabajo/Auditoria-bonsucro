@@ -952,7 +952,7 @@ if df_consolidado.empty and not detalles_list:
 st.markdown("""
 <div class="footer">
     Modulo fertilización
-    · Proyecto Fertilización · 2026
+    · Auditoria Bonsucro · 2026
 </div>
 """, unsafe_allow_html=True)
 
