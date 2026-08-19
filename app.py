@@ -14,13 +14,12 @@ import tempfile
 from pathlib import Path
 from datetime import datetime
 
-from services.excel_reader import ExcelReader
 from core.validaciones import Validador
 from core.procesador import Procesador
 
 
 # ===========================================================
-# Configuración de página
+# CONFIGURACIÓN
 # ===========================================================
 
 st.set_page_config(
@@ -32,15 +31,16 @@ st.set_page_config(
 
 
 # ===========================================================
-# Estilos CSS
+# CSS
 # ===========================================================
 
-st.markdown("""
-<style>
+st.markdown(
+    """
+    <style>
 
-    /* =======================================================
-       Fuente y fondo
-       ======================================================= */
+    /* -------------------------------------------------------
+       Fuente
+       ------------------------------------------------------- */
 
     @import url(
         'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap'
@@ -51,9 +51,9 @@ st.markdown("""
     }
 
 
-    /* =======================================================
-       Header principal
-       ======================================================= */
+    /* -------------------------------------------------------
+       Header
+       ------------------------------------------------------- */
 
     .main-header {
         background: linear-gradient(
@@ -72,125 +72,22 @@ st.markdown("""
     }
 
     .main-header h1 {
-        color: #ffffff;
+        color: white;
         font-size: 1.8rem;
         font-weight: 700;
-        margin: 0 0 0.3rem 0;
-        letter-spacing: -0.5px;
+        margin: 0;
     }
 
     .main-header p {
         color: rgba(255,255,255,0.85);
         font-size: 0.95rem;
-        margin: 0;
-        font-weight: 300;
+        margin: 0.3rem 0 0 0;
     }
 
 
-    /* =======================================================
-       Tarjetas métricas
-       ======================================================= */
-
-    .metric-card {
-        background: linear-gradient(
-            145deg,
-            #ffffff 0%,
-            #f7faf9 100%
-        );
-
-        border: 1px solid #e0ece8;
-        border-radius: 14px;
-
-        padding: 1.3rem 1.5rem;
-
-        text-align: center;
-
-        box-shadow:
-            0 2px 12px rgba(0,0,0,0.04);
-
-        transition:
-            transform 0.2s ease,
-            box-shadow 0.2s ease;
-    }
-
-    .metric-card:hover {
-        transform: translateY(-2px);
-
-        box-shadow:
-            0 6px 20px rgba(0,0,0,0.08);
-    }
-
-    .metric-value {
-        font-size: 2.2rem;
-        font-weight: 700;
-        color: #0d4b3c;
-
-        line-height: 1;
-
-        margin-bottom: 0.3rem;
-    }
-
-    .metric-label {
-        font-size: 0.78rem;
-        color: #6b8f83;
-
-        text-transform: uppercase;
-        letter-spacing: 0.8px;
-
-        font-weight: 600;
-    }
-
-
-    /* =======================================================
-       Status badges
-       ======================================================= */
-
-    .badge-ok {
-        display: inline-block;
-
-        background: #d4edda;
-        color: #155724;
-
-        padding: 0.25rem 0.75rem;
-
-        border-radius: 20px;
-
-        font-size: 0.8rem;
-        font-weight: 600;
-    }
-
-    .badge-error {
-        display: inline-block;
-
-        background: #f8d7da;
-        color: #721c24;
-
-        padding: 0.25rem 0.75rem;
-
-        border-radius: 20px;
-
-        font-size: 0.8rem;
-        font-weight: 600;
-    }
-
-    .badge-info {
-        display: inline-block;
-
-        background: #d1ecf1;
-        color: #0c5460;
-
-        padding: 0.25rem 0.75rem;
-
-        border-radius: 20px;
-
-        font-size: 0.8rem;
-        font-weight: 600;
-    }
-
-
-    /* =======================================================
+    /* -------------------------------------------------------
        Sidebar
-       ======================================================= */
+       ------------------------------------------------------- */
 
     [data-testid="stSidebar"] {
         background: linear-gradient(
@@ -201,20 +98,18 @@ st.markdown("""
     }
 
     [data-testid="stSidebar"] * {
-        color: #ffffff !important;
+        color: white !important;
     }
 
 
-    /* =======================================================
-       DATE INPUT - CORRECCIÓN
-       ======================================================= */
+    /* -------------------------------------------------------
+       Date input
+       ------------------------------------------------------- */
 
     [data-testid="stSidebar"] [data-testid="stDateInput"] input {
-        background-color: #ffffff !important;
+        background-color: white !important;
         color: #222222 !important;
-
-        border: 1px solid #d0d0d0 !important;
-
+        border: 1px solid #cccccc !important;
         border-radius: 8px !important;
     }
 
@@ -223,39 +118,22 @@ st.markdown("""
     }
 
     [data-testid="stSidebar"] [data-testid="stDateInput"] button {
-        background-color: #ffffff !important;
-        color: #333333 !important;
-    }
-
-    [data-testid="stSidebar"] [data-testid="stDateInput"] svg {
-        color: #333333 !important;
-        fill: #333333 !important;
+        background-color: white !important;
+        color: #222222 !important;
     }
 
 
-    /* =======================================================
-       Selectbox / Multiselect
-       ======================================================= */
-
-    [data-testid="stSidebar"] .stSelectbox label,
-    [data-testid="stSidebar"] .stMultiSelect label {
-        color: rgba(255,255,255,0.9) !important;
-        font-weight: 500;
-    }
-
-
-    /* =======================================================
-       Sección
-       ======================================================= */
+    /* -------------------------------------------------------
+       Secciones
+       ------------------------------------------------------- */
 
     .section-title {
         font-size: 1.1rem;
-
         font-weight: 600;
-
         color: #0d4b3c;
 
-        margin: 1.5rem 0 0.8rem 0;
+        margin-top: 1.2rem;
+        margin-bottom: 0.8rem;
 
         padding-bottom: 0.4rem;
 
@@ -265,44 +143,9 @@ st.markdown("""
     }
 
 
-    /* =======================================================
-       Tabla de datos
-       ======================================================= */
-
-    .stDataFrame {
-        border-radius: 12px;
-        overflow: hidden;
-    }
-
-
-    /* =======================================================
-       File uploader
-       ======================================================= */
-
-    [data-testid="stFileUploader"] {
-        border: 2px dashed #2dba8e;
-
-        border-radius: 14px;
-
-        padding: 1rem;
-
-        background: #f7fdf9;
-    }
-
-
-    /* =======================================================
-       Tabs
-       ======================================================= */
-
-    button[data-baseweb="tab"] {
-        font-size: 1rem;
-        font-weight: 600;
-    }
-
-
-    /* =======================================================
+    /* -------------------------------------------------------
        Footer
-       ======================================================= */
+       ------------------------------------------------------- */
 
     .footer {
         text-align: center;
@@ -318,12 +161,14 @@ st.markdown("""
         border-top: 1px solid #e8efe9;
     }
 
-</style>
-""", unsafe_allow_html=True)
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 
 # ===========================================================
-# Constantes
+# CONSTANTES
 # ===========================================================
 
 COLUMNAS_ESPERADAS = [
@@ -358,7 +203,7 @@ COLUMNAS_CLAVE = [
 
 
 # ===========================================================
-# Rutas
+# RUTAS
 # ===========================================================
 
 RUTA_MAESTRO = (
@@ -375,7 +220,7 @@ RUTA_PRONTUARIO = (
 
 
 # ===========================================================
-# Inicializar session_state
+# SESSION STATE
 # ===========================================================
 
 if "consolidado" not in st.session_state:
@@ -389,14 +234,11 @@ if "detalles" not in st.session_state:
 
 
 # ===========================================================
-# Funciones auxiliares
+# CARGAR MAESTRO
 # ===========================================================
 
 @st.cache_data
 def cargar_maestro():
-    """
-    Carga el archivo maestro de configuración.
-    """
 
     ruta = (
         Path(__file__).parent
@@ -436,16 +278,10 @@ def cargar_maestro():
 
 
 # ===========================================================
-# Procesador
+# PROCESADOR
 # ===========================================================
 
 def _ejecutar_procesador(carpeta):
-    """
-    Instancia el Procesador con las rutas del maestro
-    y el prontuario.
-
-    Procesa todos los archivos de la carpeta.
-    """
 
     procesador = Procesador(
         ruta_maestro=str(RUTA_MAESTRO),
@@ -458,7 +294,7 @@ def _ejecutar_procesador(carpeta):
 
 
     # -------------------------------------------------------
-    # Convertir errores a lista
+    # Errores
     # -------------------------------------------------------
 
     if isinstance(
@@ -467,8 +303,7 @@ def _ejecutar_procesador(carpeta):
     ):
 
         errores_list = (
-            errores_df
-            .to_dict("records")
+            errores_df.to_dict("records")
         )
 
     else:
@@ -481,7 +316,7 @@ def _ejecutar_procesador(carpeta):
 
 
     # -------------------------------------------------------
-    # Detalles por archivo
+    # Detalles
     # -------------------------------------------------------
 
     detalles_list = []
@@ -513,7 +348,7 @@ def _ejecutar_procesador(carpeta):
 
 
     # -------------------------------------------------------
-    # Archivos con error completo
+    # Archivos que fallaron
     # -------------------------------------------------------
 
     archivos_en_consolidado = set(
@@ -562,19 +397,15 @@ def _ejecutar_procesador(carpeta):
 
 
 # ===========================================================
-# Procesar archivos subidos
+# PROCESAR ARCHIVOS SUBIDOS
 # ===========================================================
 
 def procesar_archivos(
     archivos_subidos,
-    maestro,
-    prontuario,
-    periodo
+    maestro=None,
+    prontuario=None,
+    periodo=None
 ):
-    """
-    Guarda temporalmente los archivos subidos
-    y los procesa mediante Procesador.
-    """
 
     with tempfile.TemporaryDirectory() as carpeta_temp:
 
@@ -587,11 +418,15 @@ def procesar_archivos(
                 / archivo.name
             )
 
-            with open(destino, "wb") as f:
+            with open(
+                destino,
+                "wb"
+            ) as f:
 
                 f.write(
                     archivo.getbuffer()
                 )
+
 
         return _ejecutar_procesador(
             carpeta_temp
@@ -599,14 +434,10 @@ def procesar_archivos(
 
 
 # ===========================================================
-# Procesar desde carpeta
+# PROCESAR CARPETA
 # ===========================================================
 
 def cargar_desde_carpeta():
-    """
-    Procesa los archivos existentes en:
-    data/entrada
-    """
 
     carpeta_entrada = (
         Path(__file__).parent
@@ -620,7 +451,7 @@ def cargar_desde_carpeta():
 
 
 # ===========================================================
-# DataFrame → Excel
+# DATAFRAME → EXCEL
 # ===========================================================
 
 def to_excel_bytes(df):
@@ -642,7 +473,7 @@ def to_excel_bytes(df):
 
 
 # ===========================================================
-# Función para guardar resultados
+# GUARDAR RESULTADOS
 # ===========================================================
 
 def guardar_resultados(
@@ -665,27 +496,39 @@ def guardar_resultados(
 
 
 # ===========================================================
-# Header
+# HEADER
 # ===========================================================
 
-st.markdown("""
-<div class="main-header">
+st.markdown(
+    """
+    <div class="main-header">
 
-    <h1>
-        🌿 Auditoria Bonsucro
-    </h1>
+        <h1>
+            🌿 Auditoría Bonsucro
+        </h1>
 
-    <p>
-        Procesamiento, validación y consolidación
-        de datos de fertilización agrícola
-    </p>
+        <p>
+            Procesamiento, validación y consolidación
+            de datos de fertilización agrícola
+        </p>
 
-</div>
-""", unsafe_allow_html=True)
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 
 # ===========================================================
-# Sidebar
+# CARGAR MAESTRO
+# ===========================================================
+
+fertilizantes_df, herbicidas_df = (
+    cargar_maestro()
+)
+
+
+# ===========================================================
+# SIDEBAR
 # ===========================================================
 
 with st.sidebar:
@@ -698,7 +541,7 @@ with st.sidebar:
 
 
     # -------------------------------------------------------
-    # Fuente de datos
+    # Fuente
     # -------------------------------------------------------
 
     modo = st.radio(
@@ -707,12 +550,7 @@ with st.sidebar:
         [
             "Subir archivos",
             "Carpeta del proyecto"
-        ],
-
-        help=(
-            "Seleccione cómo desea cargar "
-            "los datos"
-        )
+        ]
     )
 
 
@@ -728,34 +566,19 @@ with st.sidebar:
     )
 
 
-    fertilizantes_df, herbicidas_df = (
-        cargar_maestro()
-    )
-
-
     if fertilizantes_df is not None:
 
-        st.markdown(
-            f"""
-            <span class="badge-ok">
-                {len(fertilizantes_df)}
-                fertilizantes
-            </span>
-            """,
-            unsafe_allow_html=True
+        st.success(
+            f"🧪 {len(fertilizantes_df)} "
+            f"fertilizantes"
         )
 
 
     if herbicidas_df is not None:
 
-        st.markdown(
-            f"""
-            <span class="badge-info">
-                {len(herbicidas_df)}
-                herbicidas
-            </span>
-            """,
-            unsafe_allow_html=True
+        st.info(
+            f"🌿 {len(herbicidas_df)} "
+            f"herbicidas"
         )
 
 
@@ -771,10 +594,12 @@ with st.sidebar:
     )
 
 
-    col1, col2 = st.columns(2)
+    col_fecha1, col_fecha2 = (
+        st.columns(2)
+    )
 
 
-    with col1:
+    with col_fecha1:
 
         fecha_inicio = st.date_input(
             "Desde",
@@ -782,11 +607,12 @@ with st.sidebar:
                 2025,
                 1,
                 1
-            )
+            ),
+            key="fecha_inicio"
         )
 
 
-    with col2:
+    with col_fecha2:
 
         fecha_fin = st.date_input(
             "Hasta",
@@ -794,7 +620,8 @@ with st.sidebar:
                 2026,
                 12,
                 31
-            )
+            ),
+            key="fecha_fin"
         )
 
 
@@ -808,20 +635,22 @@ with st.sidebar:
 
 
     # -------------------------------------------------------
-    # Estado de errores
+    # Estado
     # -------------------------------------------------------
-
-    errores_sidebar = (
-        st.session_state
-        .get("errores", [])
-    )
-
 
     st.markdown("---")
 
-
     st.markdown(
-        "### ⚠️ Estado del procesamiento"
+        "### ⚠️ Estado"
+    )
+
+
+    errores_sidebar = (
+        st.session_state
+        .get(
+            "errores",
+            []
+        )
     )
 
 
@@ -836,16 +665,14 @@ with st.sidebar:
 
         st.warning(
             f"Se encontraron "
-            f"**{len(df_errores_sidebar)}** "
-            f"errores."
+            f"{len(df_errores_sidebar)} "
+            f"errores"
         )
 
 
         st.download_button(
 
-            label=(
-                "📥 Descargar errores (.xlsx)"
-            ),
+            label="📥 Descargar errores",
 
             data=to_excel_bytes(
                 df_errores_sidebar
@@ -869,24 +696,20 @@ with st.sidebar:
     else:
 
         st.success(
-            "✅ No hay errores de lectura"
+            "✅ Sin errores de lectura"
         )
 
 
     st.markdown("---")
 
 
-    # -------------------------------------------------------
-    # Fecha
-    # -------------------------------------------------------
-
-    st.markdown(
+    st.caption(
         f"📅 {datetime.now().strftime('%d/%m/%Y')}"
     )
 
 
 # ===========================================================
-# PESTAÑAS PRINCIPALES
+# PESTAÑAS
 # ===========================================================
 
 tab_visualizador, tab_procesar = st.tabs(
@@ -899,38 +722,36 @@ tab_visualizador, tab_procesar = st.tabs(
 
 # ===========================================================
 # ===========================================================
-# PESTAÑA PROCESAR
+# PROCESAR
 # ===========================================================
 # ===========================================================
 
 with tab_procesar:
 
-    st.markdown(
-        '<p class="section-title">'
-        '⚙️ Procesamiento de datos'
-        '</p>',
-        unsafe_allow_html=True
+    st.header(
+        "⚙️ Procesamiento de datos"
+    )
+
+
+    st.write(
+        "Cargue y procese los archivos de fertilización."
     )
 
 
     # =======================================================
-    # Fuente: subir archivos
+    # SUBIR ARCHIVOS
     # =======================================================
 
     if modo == "Subir archivos":
 
-        st.markdown(
-            '<p class="section-title">'
-            '📤 Cargar archivos Excel'
-            '</p>',
-            unsafe_allow_html=True
+        st.subheader(
+            "📤 Cargar archivos Excel"
         )
 
 
         archivos = st.file_uploader(
 
-            "Seleccione los archivos Excel "
-            "con el formato de fertilización",
+            "Seleccione los archivos Excel",
 
             type=[
                 "xlsx",
@@ -941,7 +762,7 @@ with tab_procesar:
 
             help=(
                 "Los archivos deben contener "
-                "la hoja 'FORMATO FERT'"
+                "la hoja FORMATO FERT"
             )
         )
 
@@ -949,34 +770,35 @@ with tab_procesar:
         if archivos:
 
             st.info(
-                f"📄 {len(archivos)} archivo(s) "
-                "seleccionado(s)"
+                f"📄 Archivos seleccionados: "
+                f"{len(archivos)}"
             )
 
 
             if st.button(
                 "🚀 Procesar archivos",
                 type="primary",
-                use_container_width=True
+                use_container_width=True,
+                key="procesar_subidos"
             ):
 
                 with st.spinner(
                     "⏳ Procesando archivos..."
                 ):
 
-                    df_consolidado, errores_list, detalles_list = (
+                    (
+                        df_consolidado,
+                        errores_list,
+                        detalles_list
+                    ) = procesar_archivos(
 
-                        procesar_archivos(
+                        archivos_subidos=archivos,
 
-                            archivos_subidos=archivos,
+                        maestro=fertilizantes_df,
 
-                            maestro=fertilizantes_df,
+                        prontuario=None,
 
-                            prontuario=None,
-
-                            periodo=periodo
-
-                        )
+                        periodo=periodo
 
                     )
 
@@ -993,23 +815,18 @@ with tab_procesar:
 
 
                 st.success(
-                    "✅ Procesamiento terminado"
+                    "✅ Procesamiento terminado correctamente."
                 )
-
-                st.rerun()
 
 
     # =======================================================
-    # Fuente: carpeta
+    # CARPETA
     # =======================================================
 
     else:
 
-        st.markdown(
-            '<p class="section-title">'
-            '📁 Datos desde carpeta del proyecto'
-            '</p>',
-            unsafe_allow_html=True
+        st.subheader(
+            "📁 Datos desde carpeta del proyecto"
         )
 
 
@@ -1028,7 +845,7 @@ with tab_procesar:
 
 
         st.info(
-            f"📂 Carpeta: `data/entrada`  \n"
+            f"📂 Carpeta: `data/entrada`\n\n"
             f"📄 Archivos encontrados: "
             f"**{len(archivos_encontrados)}**"
         )
@@ -1039,7 +856,8 @@ with tab_procesar:
             if st.button(
                 "🚀 Procesar archivos",
                 type="primary",
-                use_container_width=True
+                use_container_width=True,
+                key="procesar_carpeta"
             ):
 
                 with st.spinner(
@@ -1065,10 +883,8 @@ with tab_procesar:
 
 
                 st.success(
-                    "✅ Procesamiento terminado"
+                    "✅ Procesamiento terminado correctamente."
                 )
-
-                st.rerun()
 
         else:
 
@@ -1079,7 +895,7 @@ with tab_procesar:
 
 
     # =======================================================
-    # Recuperar resultados
+    # RECUPERAR RESULTADOS
     # =======================================================
 
     df_consolidado = (
@@ -1110,19 +926,15 @@ with tab_procesar:
 
 
     # =======================================================
-    # Resultado del procesamiento
+    # RESULTADO POR ARCHIVO
     # =======================================================
 
     if detalles_list:
 
-        st.markdown("---")
+        st.divider()
 
-
-        st.markdown(
-            '<p class="section-title">'
-            '📋 Resultado del procesamiento'
-            '</p>',
-            unsafe_allow_html=True
+        st.subheader(
+            "📋 Resultado del procesamiento"
         )
 
 
@@ -1133,32 +945,21 @@ with tab_procesar:
 
         st.dataframe(
             df_detalles,
-
             use_container_width=True,
-
             hide_index=True
         )
 
 
     # =======================================================
-    # Métricas del procesamiento
+    # RESUMEN DEL PROCESAMIENTO
     # =======================================================
 
     if not df_consolidado.empty:
 
-        st.markdown("---")
+        st.divider()
 
-
-        st.markdown(
-            '<p class="section-title">'
-            '📈 Resumen del procesamiento'
-            '</p>',
-            unsafe_allow_html=True
-        )
-
-
-        col1, col2, col3, col4, col5 = (
-            st.columns(5)
+        st.subheader(
+            "📈 Resumen"
         )
 
 
@@ -1172,7 +973,6 @@ with tab_procesar:
             in df_consolidado.columns
 
             else 0
-
         )
 
 
@@ -1191,7 +991,6 @@ with tab_procesar:
             in df_consolidado.columns
 
             else 0
-
         )
 
 
@@ -1207,7 +1006,6 @@ with tab_procesar:
             in df_consolidado.columns
 
             else 0
-
         )
 
 
@@ -1216,132 +1014,66 @@ with tab_procesar:
         )
 
 
-        with col1:
+        c1, c2, c3, c4, c5 = (
+            st.columns(5)
+        )
 
-            st.markdown(
-                f"""
-                <div class="metric-card">
 
-                    <div class="metric-value">
-                        {n_archivos}
-                    </div>
-
-                    <div class="metric-label">
-                        Archivos
-                    </div>
-
-                </div>
-                """,
-                unsafe_allow_html=True
+        with c1:
+            st.metric(
+                "📄 Archivos",
+                n_archivos
             )
 
 
-        with col2:
-
-            st.markdown(
-                f"""
-                <div class="metric-card">
-
-                    <div class="metric-value">
-                        {n_registros}
-                    </div>
-
-                    <div class="metric-label">
-                        Registros
-                    </div>
-
-                </div>
-                """,
-                unsafe_allow_html=True
+        with c2:
+            st.metric(
+                "📋 Registros",
+                n_registros
             )
 
 
-        with col3:
-
-            st.markdown(
-                f"""
-                <div class="metric-card">
-
-                    <div class="metric-value">
-                        {n_productos}
-                    </div>
-
-                    <div class="metric-label">
-                        Productos
-                    </div>
-
-                </div>
-                """,
-                unsafe_allow_html=True
+        with c3:
+            st.metric(
+                "🧪 Productos",
+                n_productos
             )
 
 
-        with col4:
-
-            st.markdown(
-                f"""
-                <div class="metric-card">
-
-                    <div class="metric-value">
-                        {n_haciendas}
-                    </div>
-
-                    <div class="metric-label">
-                        Haciendas
-                    </div>
-
-                </div>
-                """,
-                unsafe_allow_html=True
+        with c4:
+            st.metric(
+                "🏡 Haciendas",
+                n_haciendas
             )
 
 
-        with col5:
-
-            st.markdown(
-                f"""
-                <div class="metric-card">
-
-                    <div class="metric-value">
-                        {n_errores}
-                    </div>
-
-                    <div class="metric-label">
-                        Errores
-                    </div>
-
-                </div>
-                """,
-                unsafe_allow_html=True
+        with c5:
+            st.metric(
+                "⚠️ Errores",
+                n_errores
             )
 
 
     # =======================================================
-    # Validaciones
+    # VALIDACIÓN
     # =======================================================
 
     if not df_consolidado.empty:
 
-        st.markdown("---")
+        st.divider()
 
-
-        st.markdown(
-            '<p class="section-title">'
-            '✅ Validación de datos'
-            '</p>',
-            unsafe_allow_html=True
+        st.subheader(
+            "✅ Validación de datos"
         )
 
 
         with st.expander(
-            "🔎 Ejecutar validaciones",
-            expanded=False
+            "🔎 Ejecutar validaciones"
         ):
-
 
             if st.button(
                 "Validar datos",
-                type="secondary"
+                key="validar_datos"
             ):
 
                 validador = Validador()
@@ -1374,13 +1106,9 @@ with tab_procesar:
 
 
                     st.dataframe(
-
                         df_errores_val,
-
                         use_container_width=True,
-
                         hide_index=True
-
                     )
 
                 else:
@@ -1392,19 +1120,15 @@ with tab_procesar:
 
 
     # =======================================================
-    # Descargas
+    # DESCARGAS
     # =======================================================
 
     if not df_consolidado.empty:
 
-        st.markdown("---")
+        st.divider()
 
-
-        st.markdown(
-            '<p class="section-title">'
-            '💾 Descargas'
-            '</p>',
-            unsafe_allow_html=True
+        st.subheader(
+            "💾 Descargas"
         )
 
 
@@ -1414,7 +1138,7 @@ with tab_procesar:
 
 
         # ---------------------------------------------------
-        # Consolidado
+        # CONSOLIDADO
         # ---------------------------------------------------
 
         with col_d1:
@@ -1422,41 +1146,23 @@ with tab_procesar:
             columnas_exportar = [
 
                 "ULT_CORTE",
-
                 "RAZON_SOCIAL",
-
                 "HACIENDA",
-
                 "SUERTE",
-
                 "AREA",
-
                 "PRODUCTO",
-
                 "DOSIS X HA",
-
                 "UNIDAD",
-
                 "CANTIDAD",
-
                 "UNIDAD/HA",
-
                 "UNIDADES - N",
-
                 "UNIDADES - P",
-
                 "UNIDADES - K",
-
                 "UNIDADES - S",
-
                 "UNIDADES - MENORES",
-
                 "HACIENDA_ARCHIVO",
-
                 "ARCHIVO_ORIGEN",
-
                 "ESTADO",
-
                 "OBSERVACIONES"
 
             ]
@@ -1483,7 +1189,7 @@ with tab_procesar:
             st.download_button(
 
                 label=(
-                    "📥 Descargar consolidado (.xlsx)"
+                    "📥 Descargar consolidado"
                 ),
 
                 data=to_excel_bytes(
@@ -1491,21 +1197,14 @@ with tab_procesar:
                 ),
 
                 file_name=(
-
                     "Consolidado_Fertilizacion_"
-
                     f"{datetime.now().strftime('%Y%m%d_%H%M')}"
-
                     ".xlsx"
-
                 ),
 
                 mime=(
-
                     "application/vnd.openxmlformats-officedocument"
-
                     ".spreadsheetml.sheet"
-
                 ),
 
                 use_container_width=True,
@@ -1516,7 +1215,7 @@ with tab_procesar:
 
 
         # ---------------------------------------------------
-        # Errores
+        # ERRORES
         # ---------------------------------------------------
 
         with col_d2:
@@ -1533,7 +1232,7 @@ with tab_procesar:
                 st.download_button(
 
                     label=(
-                        "📥 Descargar errores (.xlsx)"
+                        "📥 Descargar errores"
                     ),
 
                     data=to_excel_bytes(
@@ -1541,21 +1240,14 @@ with tab_procesar:
                     ),
 
                     file_name=(
-
                         "Errores_Lectura_"
-
                         f"{datetime.now().strftime('%Y%m%d_%H%M')}"
-
                         ".xlsx"
-
                     ),
 
                     mime=(
-
                         "application/vnd.openxmlformats-officedocument"
-
                         ".spreadsheetml.sheet"
-
                     ),
 
                     use_container_width=True
@@ -1570,7 +1262,7 @@ with tab_procesar:
 
 
     # =======================================================
-    # Referencia cruzada con maestro
+    # REFERENCIA MAESTRO
     # =======================================================
 
     if (
@@ -1580,23 +1272,16 @@ with tab_procesar:
         in df_consolidado.columns
     ):
 
-        st.markdown("---")
+        st.divider()
 
-
-        st.markdown(
-            '<p class="section-title">'
-            '🔗 Referencia cruzada con maestro'
-            '</p>',
-            unsafe_allow_html=True
+        st.subheader(
+            "🔗 Referencia cruzada con maestro"
         )
 
 
         with st.expander(
-            "📋 Ver productos del maestro "
-            "de fertilizantes",
-            expanded=False
+            "📋 Ver productos del maestro"
         ):
-
 
             if (
                 "NOMBRE COMERCIAL"
@@ -1639,13 +1324,15 @@ with tab_procesar:
 
                 en_maestro = (
                     productos_datos
-                    & nombres_maestro
+                    &
+                    nombres_maestro
                 )
 
 
                 no_en_maestro = (
                     productos_datos
-                    - nombres_maestro
+                    -
+                    nombres_maestro
                 )
 
 
@@ -1657,23 +1344,23 @@ with tab_procesar:
                 with col_m1:
 
                     st.markdown(
-                        "**✅ Encontrados en maestro:**"
+                        "### ✅ Encontrados"
                     )
 
 
                     if en_maestro:
 
-                        for p in sorted(
+                        for producto in sorted(
                             en_maestro
                         ):
 
-                            st.markdown(
-                                f"- {p}"
+                            st.write(
+                                f"• {producto}"
                             )
 
                     else:
 
-                        st.caption(
+                        st.info(
                             "Ninguno"
                         )
 
@@ -1681,46 +1368,40 @@ with tab_procesar:
                 with col_m2:
 
                     st.markdown(
-                        "**⚠️ NO encontrados en maestro:**"
+                        "### ⚠️ No encontrados"
                     )
 
 
                     if no_en_maestro:
 
-                        for p in sorted(
+                        for producto in sorted(
                             no_en_maestro
                         ):
 
-                            st.markdown(
-                                f"- {p}"
+                            st.write(
+                                f"• {producto}"
                             )
 
                     else:
 
-                        st.caption(
-                            "Todos coinciden"
+                        st.success(
+                            "Todos los productos "
+                            "coinciden con el maestro."
                         )
 
 
 # ===========================================================
 # ===========================================================
-# PESTAÑA VISUALIZADOR
+# VISUALIZADOR
 # ===========================================================
 # ===========================================================
 
 with tab_visualizador:
 
-    st.markdown(
-        '<p class="section-title">'
-        '📊 Visualizador de fertilización'
-        '</p>',
-        unsafe_allow_html=True
+    st.header(
+        "📊 Visualizador"
     )
 
-
-    # =======================================================
-    # Recuperar consolidado
-    # =======================================================
 
     df_consolidado = (
         st.session_state
@@ -1731,71 +1412,35 @@ with tab_visualizador:
     )
 
 
+    # =======================================================
+    # SIN DATOS
+    # =======================================================
+
     if df_consolidado.empty:
 
-        st.markdown(
-            """
-            <div style="
-                text-align: center;
-                padding: 3rem 2rem;
-                background:
-                    linear-gradient(
-                        135deg,
-                        #f7fdf9,
-                        #edf7f2
-                    );
-
-                border-radius: 16px;
-
-                border:
-                    2px dashed #2dba8e;
-            ">
-
-                <div style="
-                    font-size: 4rem;
-                    margin-bottom: 1rem;
-                ">
-                    🌿
-                </div>
-
-                <h3 style="
-                    color: #0d4b3c;
-                    margin-bottom: 0.5rem;
-                ">
-                    No hay datos procesados
-                </h3>
-
-                <p style="
-                    color: #6b8f83;
-                    font-size: 0.95rem;
-                ">
-                    Vaya a la pestaña
-                    <strong>⚙️ Procesar</strong>
-                    para cargar y procesar los archivos.
-                </p>
-
-            </div>
-            """,
-            unsafe_allow_html=True
+        st.info(
+            "🌿 No hay datos procesados todavía."
         )
 
+        st.write(
+            "Vaya a la pestaña "
+            "**⚙️ Procesar** para cargar "
+            "y procesar los archivos."
+        )
+
+
+    # =======================================================
+    # CON DATOS
+    # =======================================================
 
     else:
 
         # ===================================================
-        # Métricas
+        # MÉTRICAS
         # ===================================================
 
-        st.markdown(
-            '<p class="section-title">'
-            '📈 Resumen General'
-            '</p>',
-            unsafe_allow_html=True
-        )
-
-
-        col1, col2, col3, col4, col5 = (
-            st.columns(5)
+        st.subheader(
+            "📈 Resumen general"
         )
 
 
@@ -1809,7 +1454,6 @@ with tab_visualizador:
             in df_consolidado.columns
 
             else 0
-
         )
 
 
@@ -1828,7 +1472,6 @@ with tab_visualizador:
             in df_consolidado.columns
 
             else 0
-
         )
 
 
@@ -1844,7 +1487,6 @@ with tab_visualizador:
             in df_consolidado.columns
 
             else 0
-
         )
 
 
@@ -1862,118 +1504,59 @@ with tab_visualizador:
         )
 
 
-        with col1:
+        c1, c2, c3, c4, c5 = (
+            st.columns(5)
+        )
 
-            st.markdown(
-                f"""
-                <div class="metric-card">
 
-                    <div class="metric-value">
-                        {n_archivos}
-                    </div>
+        with c1:
 
-                    <div class="metric-label">
-                        Archivos
-                    </div>
-
-                </div>
-                """,
-                unsafe_allow_html=True
+            st.metric(
+                "📄 Archivos",
+                n_archivos
             )
 
 
-        with col2:
+        with c2:
 
-            st.markdown(
-                f"""
-                <div class="metric-card">
-
-                    <div class="metric-value">
-                        {n_registros}
-                    </div>
-
-                    <div class="metric-label">
-                        Registros
-                    </div>
-
-                </div>
-                """,
-                unsafe_allow_html=True
+            st.metric(
+                "📋 Registros",
+                n_registros
             )
 
 
-        with col3:
+        with c3:
 
-            st.markdown(
-                f"""
-                <div class="metric-card">
-
-                    <div class="metric-value">
-                        {n_productos}
-                    </div>
-
-                    <div class="metric-label">
-                        Productos
-                    </div>
-
-                </div>
-                """,
-                unsafe_allow_html=True
+            st.metric(
+                "🧪 Productos",
+                n_productos
             )
 
 
-        with col4:
+        with c4:
 
-            st.markdown(
-                f"""
-                <div class="metric-card">
-
-                    <div class="metric-value">
-                        {n_haciendas}
-                    </div>
-
-                    <div class="metric-label">
-                        Haciendas
-                    </div>
-
-                </div>
-                """,
-                unsafe_allow_html=True
+            st.metric(
+                "🏡 Haciendas",
+                n_haciendas
             )
 
 
-        with col5:
+        with c5:
 
-            st.markdown(
-                f"""
-                <div class="metric-card">
-
-                    <div class="metric-value">
-                        {n_errores}
-                    </div>
-
-                    <div class="metric-label">
-                        Errores
-                    </div>
-
-                </div>
-                """,
-                unsafe_allow_html=True
+            st.metric(
+                "⚠️ Errores",
+                n_errores
             )
 
 
         # ===================================================
-        # Filtros
+        # FILTROS
         # ===================================================
 
-        st.markdown("---")
+        st.divider()
 
-
-        st.markdown(
-            '<p class="section-title">'
-            '🔍 Filtros'
-            '</p>',
-            unsafe_allow_html=True
+        st.subheader(
+            "🔍 Filtros"
         )
 
 
@@ -1988,7 +1571,7 @@ with tab_visualizador:
 
 
         # ---------------------------------------------------
-        # Filtro archivo
+        # ARCHIVO
         # ---------------------------------------------------
 
         with col_f1:
@@ -2005,6 +1588,8 @@ with tab_visualizador:
                     ]
 
                     .dropna()
+
+                    .astype(str)
 
                     .unique()
 
@@ -2030,7 +1615,9 @@ with tab_visualizador:
                     df_filtrado[
                         df_filtrado[
                             "ARCHIVO_ORIGEN"
-                        ].isin(
+                        ]
+                        .astype(str)
+                        .isin(
                             sel_archivos
                         )
                     ]
@@ -2038,7 +1625,7 @@ with tab_visualizador:
 
 
         # ---------------------------------------------------
-        # Filtro producto
+        # PRODUCTO
         # ---------------------------------------------------
 
         with col_f2:
@@ -2055,6 +1642,8 @@ with tab_visualizador:
                     ]
 
                     .dropna()
+
+                    .astype(str)
 
                     .unique()
 
@@ -2080,7 +1669,9 @@ with tab_visualizador:
                     df_filtrado[
                         df_filtrado[
                             "PRODUCTO"
-                        ].isin(
+                        ]
+                        .astype(str)
+                        .isin(
                             sel_productos
                         )
                     ]
@@ -2088,7 +1679,7 @@ with tab_visualizador:
 
 
         # ---------------------------------------------------
-        # Filtro hacienda
+        # HACIENDA
         # ---------------------------------------------------
 
         with col_f3:
@@ -2142,14 +1733,13 @@ with tab_visualizador:
 
 
         # ===================================================
-        # Tabla consolidada
+        # TABLA
         # ===================================================
 
-        st.markdown(
-            '<p class="section-title">'
-            '📊 Datos consolidados'
-            '</p>',
-            unsafe_allow_html=True
+        st.divider()
+
+        st.subheader(
+            "📋 Datos consolidados"
         )
 
 
@@ -2159,7 +1749,8 @@ with tab_visualizador:
 
             for c in (
                 COLUMNAS_CLAVE
-                + ["ARCHIVO_ORIGEN"]
+                +
+                ["ARCHIVO_ORIGEN"]
             )
 
             if c in df_filtrado.columns
@@ -2167,25 +1758,35 @@ with tab_visualizador:
         ]
 
 
-        st.dataframe(
+        if columnas_mostrar:
 
-            (
+            st.dataframe(
+
                 df_filtrado[
                     columnas_mostrar
-                ]
+                ],
 
-                if columnas_mostrar
+                use_container_width=True,
 
-                else df_filtrado
-            ),
+                hide_index=True,
 
-            use_container_width=True,
+                height=450
 
-            hide_index=True,
+            )
 
-            height=450
+        else:
 
-        )
+            st.dataframe(
+
+                df_filtrado,
+
+                use_container_width=True,
+
+                hide_index=True,
+
+                height=450
+
+            )
 
 
         st.caption(
@@ -2198,36 +1799,32 @@ with tab_visualizador:
 
 
         # ===================================================
-        # Gráficos
+        # ANÁLISIS VISUAL
         # ===================================================
 
-        st.markdown("---")
+        st.divider()
 
-
-        st.markdown(
-            '<p class="section-title">'
-            '📊 Análisis Visual'
-            '</p>',
-            unsafe_allow_html=True
+        st.subheader(
+            "📊 Análisis visual"
         )
 
 
-        tab1, tab2, tab3 = st.tabs(
-
-            [
-                "🧪 Por Producto",
-                "📦 Cantidad por Producto",
-                "🌱 Dosis por Producto"
-            ]
-
+        tab_producto, tab_cantidad, tab_dosis = (
+            st.tabs(
+                [
+                    "🧪 Por producto",
+                    "📦 Cantidad por producto",
+                    "🌱 Dosis por producto"
+                ]
+            )
         )
 
 
         # ---------------------------------------------------
-        # Gráfico productos
+        # PRODUCTOS
         # ---------------------------------------------------
 
-        with tab1:
+        with tab_producto:
 
             if (
                 "PRODUCTO"
@@ -2242,6 +1839,8 @@ with tab_visualizador:
 
                     .dropna()
 
+                    .astype(str)
+
                     .value_counts()
 
                     .head(15)
@@ -2249,33 +1848,37 @@ with tab_visualizador:
                 )
 
 
-                st.bar_chart(
-                    conteo
-                )
+                if not conteo.empty:
+
+                    st.bar_chart(
+                        conteo
+                    )
+
+                else:
+
+                    st.info(
+                        "No hay datos disponibles."
+                    )
 
             else:
 
                 st.info(
-                    "No hay datos de producto disponibles"
+                    "No existe la columna PRODUCTO."
                 )
 
 
         # ---------------------------------------------------
-        # Gráfico cantidad
+        # CANTIDAD
         # ---------------------------------------------------
 
-        with tab2:
+        with tab_cantidad:
 
             if (
-
                 "PRODUCTO"
                 in df_filtrado.columns
-
                 and
-
                 "CANTIDAD"
                 in df_filtrado.columns
-
             ):
 
                 cantidad_prod = (
@@ -2299,33 +1902,38 @@ with tab_visualizador:
                 )
 
 
-                st.bar_chart(
-                    cantidad_prod
-                )
+                if not cantidad_prod.empty:
+
+                    st.bar_chart(
+                        cantidad_prod
+                    )
+
+                else:
+
+                    st.info(
+                        "No hay datos disponibles."
+                    )
 
             else:
 
                 st.info(
-                    "No hay datos de cantidad disponibles"
+                    "No existen las columnas "
+                    "necesarias para este gráfico."
                 )
 
 
         # ---------------------------------------------------
-        # Gráfico dosis
+        # DOSIS
         # ---------------------------------------------------
 
-        with tab3:
+        with tab_dosis:
 
             if (
-
                 "PRODUCTO"
                 in df_filtrado.columns
-
                 and
-
                 "DOSIS X HA"
                 in df_filtrado.columns
-
             ):
 
                 dosis_prod = (
@@ -2349,107 +1957,35 @@ with tab_visualizador:
                 )
 
 
-                st.bar_chart(
-                    dosis_prod
-                )
+                if not dosis_prod.empty:
+
+                    st.bar_chart(
+                        dosis_prod
+                    )
+
+                else:
+
+                    st.info(
+                        "No hay datos disponibles."
+                    )
 
             else:
 
                 st.info(
-                    "No hay datos de dosis disponibles"
+                    "No existen las columnas "
+                    "necesarias para este gráfico."
                 )
 
 
 # ===========================================================
-# Estado vacío general
-# ===========================================================
-
-if (
-    st.session_state[
-        "consolidado"
-    ].empty
-    and
-    not st.session_state[
-        "detalles"
-    ]
-):
-
-    st.markdown(
-        "<br>",
-        unsafe_allow_html=True
-    )
-
-
-    col_empty1, col_empty2, col_empty3 = (
-        st.columns(
-            [1, 2, 1]
-        )
-    )
-
-
-    with col_empty2:
-
-        st.markdown(
-            """
-            <div style="
-                text-align: center;
-
-                padding: 3rem 2rem;
-
-                background:
-                    linear-gradient(
-                        135deg,
-                        #f7fdf9,
-                        #edf7f2
-                    );
-
-                border-radius: 16px;
-
-                border:
-                    2px dashed #2dba8e;
-            ">
-
-                <div style="
-                    font-size: 4rem;
-                    margin-bottom: 1rem;
-                ">
-                    🌿
-                </div>
-
-                <h3 style="
-                    color: #0d4b3c;
-                    margin-bottom: 0.5rem;
-                ">
-                    Módulo fertilización
-                </h3>
-
-                <p style="
-                    color: #6b8f83;
-                    font-size: 0.95rem;
-                ">
-                    Vaya a la pestaña
-                    <strong>⚙️ Procesar</strong>
-                    para cargar o procesar los archivos.
-                </p>
-
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-
-# ===========================================================
-# Footer
+# FOOTER
 # ===========================================================
 
 st.markdown(
-    """
-    <div class="footer">
+    "---"
+)
 
-        Módulo fertilización
-        · Auditoría Bonsucro · 2026
-
-    </div>
-    """,
-    unsafe_allow_html=True
+st.caption(
+    "🌿 Módulo fertilización · "
+    "Auditoría Bonsucro · 2026"
 )
