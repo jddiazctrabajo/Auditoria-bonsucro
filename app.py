@@ -340,7 +340,7 @@ def to_excel_bytes(df):
 
 st.markdown("""
 <div class="main-header">
-    <h1>🌿 Sistema de Trazabilidad de Fertilización</h1>
+    <h1>🌿 Auditoria Bonsucro </h1>
     <p>Procesamiento, validación y consolidación de datos de fertilización agrícola</p>
 </div>
 """, unsafe_allow_html=True)
