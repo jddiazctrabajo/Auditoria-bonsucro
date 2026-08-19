@@ -701,10 +701,10 @@ with st.sidebar:
 # PESTAÑAS
 # ===========================================================
 
-tab_visualizador, tab_procesar = st.tabs(
+tab_procesar, tab_visualizador = st.tabs(
     [
-        "📊 Visualizador",
-        "⚙️ Procesar"
+        "⚙️ Procesar",
+        "📊 Visualizador"
     ]
 )
 
