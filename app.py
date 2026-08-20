@@ -275,6 +275,22 @@ def _ejecutar_procesador(carpeta):
         procesador.procesar(carpeta)
     )
 
+    # -------------------------------------------------------
+    # OBSERVACIONES DE VALIDACIÓN
+    # -------------------------------------------------------
+
+    if "OBSERVACIONES" in df_consolidado.columns:
+
+        df_consolidado["OBSERVACION"] = (
+            df_consolidado["OBSERVACIONES"]
+            .fillna("")
+            .astype(str)
+            .str.strip()
+        )
+
+    else:
+
+        df_consolidado["OBSERVACION"] = ""
 
     # -------------------------------------------------------
     # Errores
