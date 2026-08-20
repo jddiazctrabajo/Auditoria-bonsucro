@@ -181,7 +181,8 @@ COLUMNAS_CLAVE = [
     "UNIDADES - N",
     "UNIDADES - P",
     "UNIDADES - K",
-    "MENORES"
+    "MENORES",
+    "OBSERVACION"
 ]
 
 
