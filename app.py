@@ -23,7 +23,7 @@ from core.procesador import Procesador
 # ===========================================================
 
 st.set_page_config(
-    page_title="Trazabilidad fertilización",
+    page_title="Auditoría Bonsucro ",
     page_icon="🌿",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -71,14 +71,14 @@ st.markdown(
     
     .main-header h1 {
         color: white;
-        font-size: 1.6rem;
-        font-weight: 700;
+        font-size: 0.8rem;
+        font-weight: 200;
         margin: 0;
     }
     
     .main-header p {
         color: rgba(255,255,255,0.85);
-        font-size: 0.85rem;
+        font-size: 0.5rem;
         margin: 0.3rem 0 0 0;
     }
     
