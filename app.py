@@ -1748,19 +1748,23 @@ with tab_visualizador:
 
 
         if columnas_mostrar:
-
+        
+            df_visual = df_filtrado[
+                columnas_mostrar
+            ].copy()
+        
+            df_visual = df_visual.rename(
+                columns={
+                    "DOSIS X HA": "DOSIS PRODUCTO X HA",
+                    "CANTIDAD": "CANTIDAD PRODUCTO POR SUERTE"
+                }
+            )
+        
             st.dataframe(
-
-                df_filtrado[
-                    columnas_mostrar
-                ],
-
+                df_visual,
                 use_container_width=True,
-
                 hide_index=True,
-
                 height=450
-
             )
 
         else:
