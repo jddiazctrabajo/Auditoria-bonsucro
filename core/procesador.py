@@ -39,7 +39,7 @@ from core.homologacion import Homologador
 from core.maestro import Maestro
 from core.prontuario import Prontuario
 from core.calculos import Calculos
-from core.validaciones import Validador
+from core.ciones import dor
 
 
 class Procesador:
@@ -1203,7 +1203,7 @@ class Procesador:
 
         self.validador.validar_suerte(df)
 
-         df = self._validar_unidades_producto(df)
+        self._validar_unidades_producto(df)
 
         # ------------------------------------------------------
         # Validar AREA
