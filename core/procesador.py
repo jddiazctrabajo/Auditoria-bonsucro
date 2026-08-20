@@ -1203,6 +1203,8 @@ class Procesador:
 
         self.validador.validar_suerte(df)
 
+         df = self._validar_unidades_producto(df)
+
         # ------------------------------------------------------
         # Validar AREA
         # ------------------------------------------------------
@@ -1324,3 +1326,119 @@ class Procesador:
         return pd.DataFrame(
             self.validador.errores
         )
+
+    def _validar_unidades_producto(self, df):
+    
+        elementos = [
+            "N",
+            "P",
+            "K",
+            "S",
+            "MENORES"
+        ]
+    
+        for idx in df.index:
+    
+            producto = df.at[
+                idx,
+                "PRODUCTO"
+            ]
+    
+            if pd.isna(producto):
+                continue
+    
+            producto = str(producto).strip()
+    
+            aportes = self.maestro.obtener_aportes(
+                producto
+            )
+    
+            if aportes is None:
+                continue
+    
+            for elemento in elementos:
+    
+                columna = f"UNIDADES - {elemento}"
+    
+                if columna not in df.columns:
+                    continue
+    
+                unidades = Calculos.numero(
+                    df.at[
+                        idx,
+                        columna
+                    ]
+                )
+    
+                # ----------------------------------------------
+                # Si no registraron unidades, no hay error
+                # ----------------------------------------------
+    
+                if pd.isna(unidades):
+                    continue
+    
+                # ----------------------------------------------
+                # Aporte real del producto
+                # ----------------------------------------------
+    
+                porcentaje = Calculos.numero(
+                    aportes.get(
+                        elemento,
+                        0
+                    )
+                )
+    
+                if pd.isna(porcentaje):
+                    porcentaje = 0
+    
+                # ----------------------------------------------
+                # ERROR:
+                # Se registraron unidades de un elemento
+                # que el producto no contiene
+                # ----------------------------------------------
+    
+                if unidades != 0 and porcentaje == 0:
+    
+                    descripcion = (
+                        f"El producto '{producto}' "
+                        f"no aporta {elemento}, "
+                        f"pero se registraron "
+                        f"{unidades} unidades de {elemento}."
+                    )
+    
+                    # ------------------------------------------
+                    # Guardar en self.validador.errores
+                    # ------------------------------------------
+    
+                    self.validador.registrar_error(
+    
+                        archivo=df.at[
+                            idx,
+                            "ARCHIVO_ORIGEN"
+                        ],
+    
+                        fila=idx + 2,
+    
+                        campo=columna,
+    
+                        valor=unidades,
+    
+                        descripcion=descripcion
+    
+                    )
+    
+                    # ------------------------------------------
+                    # Marcar registro en el consolidado
+                    # ------------------------------------------
+    
+                    df = self.validador.marcar_error(
+    
+                        df,
+    
+                        idx,
+    
+                        descripcion
+    
+                    )
+    
+        return df
