@@ -62,7 +62,7 @@ st.markdown(
             #1a7a5e 100%
         );
     
-        padding: 1.5rem 2rem;
+        padding: 1rem 1.5rem;
         border-radius: 12px;
         margin-bottom: 1.2rem;
     
@@ -113,7 +113,7 @@ st.markdown(
        ======================================================= */
     
     .section-title {
-        font-size: 0.95rem;
+        font-size: 0.5rem;
         font-weight: 600;
         color: #0d4b3c;
     
@@ -135,7 +135,7 @@ st.markdown(
     .footer {
         text-align: center;
     
-        padding: 1rem 0;
+        padding: 0.8rem 0;
     
         color: #8a9f97;
     
