@@ -39,7 +39,7 @@ from core.homologacion import Homologador
 from core.maestro import Maestro
 from core.prontuario import Prontuario
 from core.calculos import Calculos
-from core.ciones import dor
+from core.homologacion import Homologador
 
 
 class Procesador:
