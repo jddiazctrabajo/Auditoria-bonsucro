@@ -1203,7 +1203,7 @@ class Procesador:
 
         self.validador.validar_suerte(df)
 
-         df = self._validar_unidades_producto(df)
+        df = self._validar_unidades_producto(df)
 
         # ------------------------------------------------------
         # Validar AREA
