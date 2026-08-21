@@ -189,7 +189,8 @@ COLUMNAS_CLAVE = [
     "UNIDADES/HA - K",
     "UNIDADES/HA - S",
     "UNIDADES/HA - MENORES",
-    "OBSERVACION"
+    "OBSERVACION",
+    "ARCHIVO_ORIGEN"
 ]
 
 
@@ -310,17 +311,20 @@ def _ejecutar_procesador(carpeta):
     # Compatibilidad con versiones anteriores
     # -------------------------------------------------------
 
-    if "OBSERVACIONES" not in df_consolidado.columns:
 
+    if "OBSERVACION" in df_consolidado.columns:
+    
         df_consolidado["OBSERVACIONES"] = (
             df_consolidado["OBSERVACION"]
+            .fillna("")
+            .astype(str)
+            .str.strip()
         )
-
+    
     else:
-
-        df_consolidado["OBSERVACIONES"] = (
-            df_consolidado["OBSERVACION"]
-        )
+    
+        df_consolidado["OBSERVACION"] = ""
+        df_consolidado["OBSERVACIONES"] = ""
 
     # -------------------------------------------------------
     # Errores
