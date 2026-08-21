@@ -1783,14 +1783,33 @@ with tab_visualizador:
             df_visual = df_filtrado[
                 columnas_mostrar
             ].copy()
-        
+            
+            # -------------------------------------------------------
+            # ELIMINAR COLUMNAS DUPLICADAS
+            # -------------------------------------------------------
+            
+            df_visual = df_visual.loc[
+                :,
+                ~df_visual.columns.duplicated()
+            ].copy()
+            
+            # -------------------------------------------------------
+            # RENOMBRAR PARA VISUALIZACIÓN
+            # -------------------------------------------------------
+            
             df_visual = df_visual.rename(
                 columns={
                     "DOSIS X HA": "DOSIS PRODUCTO X HA",
                     "CANTIDAD": "CANTIDAD PRODUCTO POR SUERTE"
                 }
             )
-        
+            
+            # Seguridad adicional
+            df_visual = df_visual.loc[
+                :,
+                ~df_visual.columns.duplicated()
+            ].copy()
+            
             st.dataframe(
                 df_visual,
                 use_container_width=True,
