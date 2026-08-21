@@ -295,7 +295,7 @@ def _ejecutar_procesador(carpeta):
 
     if "OBSERVACION" not in df_consolidado.columns:
 
-    df_consolidado["OBSERVACION"] = ""
+        df_consolidado["OBSERVACION"] = ""
 
     else:
     
