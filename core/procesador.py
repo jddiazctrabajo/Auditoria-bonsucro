@@ -209,8 +209,6 @@ class Procesador:
 
         consolidado["OBSERVACION"] = ""
 
-        consolidado["OBSERVACIONES"] = ""
-
         return consolidado
 
     # ==========================================================
@@ -1220,80 +1218,67 @@ class Procesador:
     # ==========================================================
     # VALIDAR INFORMACIÓN
     # ==========================================================
-
     def _validar(self, df):
-
-        # ======================================================
-        # ASEGURAR COLUMNAS
-        # ======================================================
-
+    
+        # ------------------------------------------------------
+        # ASEGURAR ESTADO
+        # ------------------------------------------------------
+    
         if "ESTADO" not in df.columns:
+    
             df["ESTADO"] = "OK"
+    
         else:
+    
             df["ESTADO"] = (
                 df["ESTADO"]
                 .fillna("OK")
                 .astype(str)
             )
-
+    
+        # ------------------------------------------------------
+        # ASEGURAR OBSERVACION
+        # ------------------------------------------------------
+    
         if "OBSERVACION" not in df.columns:
+    
             df["OBSERVACION"] = ""
+    
         else:
+    
             df["OBSERVACION"] = (
                 df["OBSERVACION"]
                 .fillna("")
                 .astype(str)
             )
-
-        if "OBSERVACIONES" not in df.columns:
-            df["OBSERVACIONES"] = ""
-        else:
-            df["OBSERVACIONES"] = (
-                df["OBSERVACIONES"]
-                .fillna("")
-                .astype(str)
-            )
-
-        # ======================================================
-        # LIMPIAR RESULTADOS ANTERIORES
-        # ======================================================
-
-        self.validador.errores = []
-
-        df["OBSERVACION"] = ""
-        df["OBSERVACIONES"] = ""
-        df["ESTADO"] = "OK"
-
-        # ======================================================
+    
+        # ------------------------------------------------------
         # VALIDACIONES
-        # ======================================================
-
+        # ------------------------------------------------------
+    
         df = self._validar_hacienda(df)
-
+    
         df = self._validar_suerte(df)
-
+    
         df = self._validar_unidades_producto(df)
-
+    
         df = self._validar_area(df)
-
+    
         df = self._validar_unidades_hectarea(df)
-
-        # ======================================================
-        # PASAR ERRORES A LAS FILAS
-        # ======================================================
-
+    
+        # ------------------------------------------------------
+        # ACUMULAR TODAS LAS OBSERVACIONES
+        # ------------------------------------------------------
+    
         df = self._agregar_observaciones(df)
-
-        # ======================================================
-        # TABLA DE ERRORES
-        # ======================================================
-
-        errores = pd.DataFrame(
+    
+        # ------------------------------------------------------
+        # DEVOLVER TABLA DE ERRORES
+        # ------------------------------------------------------
+    
+        return pd.DataFrame(
             self.validador.errores
         )
-
-        return errores
-
     # ==========================================================
     # VALIDAR HACIENDA
     # ==========================================================
@@ -2109,178 +2094,126 @@ class Procesador:
     # ==========================================================
 
     def _agregar_observaciones(self, df):
-
+    
         # ------------------------------------------------------
-        # ASEGURAR AMBAS COLUMNAS
+        # ASEGURAR COLUMNA ÚNICA
         # ------------------------------------------------------
-
+    
         if "OBSERVACION" not in df.columns:
-
+    
             df["OBSERVACION"] = ""
-
+    
         else:
-
+    
             df["OBSERVACION"] = (
-
                 df["OBSERVACION"]
                 .fillna("")
                 .astype(str)
-
+                .replace(
+                    ["nan", "None"],
+                    "",
+                )
+                .str.strip()
             )
-
-        if "OBSERVACIONES" not in df.columns:
-
-            df["OBSERVACIONES"] = ""
-
-        else:
-
-            df["OBSERVACIONES"] = (
-
-                df["OBSERVACIONES"]
-                .fillna("")
-                .astype(str)
-
-            )
-
+    
         # ------------------------------------------------------
-        # RECORRER ERRORES
+        # ACUMULAR TODOS LOS ERRORES EN LA FILA CORRESPONDIENTE
         # ------------------------------------------------------
-
+    
         for error in self.validador.errores:
-
+    
             fila = error.get("fila")
-
+    
             descripcion = (
-
                 error.get("descripcion")
-
-                or
-
-                error.get("DESCRIPCION")
-
-                or
-
-                error.get("ERROR")
-
-                or
-
-                ""
-
+                or error.get("DESCRIPCION")
+                or error.get("ERROR")
+                or ""
             )
-
+    
             if not descripcion:
-
                 continue
-
+    
             if fila is None:
-
                 continue
-
+    
             try:
-
+    
                 indice = int(fila) - 2
-
+    
                 if indice not in df.index:
-
                     continue
-
+    
                 observacion_actual = str(
-
                     df.at[
                         indice,
                         "OBSERVACION"
                     ]
-
-                )
-
+                ).strip()
+    
+                # ----------------------------------------------
+                # Primera observación
+                # ----------------------------------------------
+    
                 if observacion_actual in [
-
                     "",
                     "nan",
                     "None"
-
                 ]:
-
+    
                     df.at[
-
                         indice,
                         "OBSERVACION"
-
                     ] = descripcion
-
+    
+                # ----------------------------------------------
+                # Acumular observación adicional
+                # ----------------------------------------------
+    
                 else:
-
-                    observaciones_existentes = (
-
+    
+                    observaciones = (
                         observacion_actual
                         .split(" | ")
-
                     )
-
-                    if descripcion not in observaciones_existentes:
-
+    
+                    if descripcion not in observaciones:
+    
+                        observaciones.append(
+                            descripcion
+                        )
+    
                         df.at[
-
                             indice,
                             "OBSERVACION"
-
-                        ] = (
-
-                            observacion_actual
-                            + " | "
-                            + descripcion
-
+                        ] = " | ".join(
+                            observaciones
                         )
-
+    
             except Exception:
-
                 continue
-
+    
         # ------------------------------------------------------
-        # COPIAR A OBSERVACIONES
-        #
-        # ESTA ES LA COLUMNA QUE NECESITAMOS CONSERVAR
-        # PARA LA APP.
+        # DETERMINAR ESTADO
         # ------------------------------------------------------
-
-        df["OBSERVACIONES"] = (
-
+    
+        mascara_con_error = (
+    
             df["OBSERVACION"]
             .fillna("")
             .astype(str)
-
-        )
-
-        # ------------------------------------------------------
-        # ACTUALIZAR ESTADO
-        # ------------------------------------------------------
-
-        mascara_con_error = (
-
-            df["OBSERVACIONES"]
             .str.strip()
             .ne("")
-
+    
         )
-
+    
         df.loc[
             mascara_con_error,
             "ESTADO"
         ] = "ERROR"
-
+    
         # ------------------------------------------------------
-        # ASEGURAR OK PARA LOS QUE NO TIENEN ERROR
+        # DEVOLVER DATAFRAME
         # ------------------------------------------------------
-
-        df.loc[
-            ~mascara_con_error,
-            "ESTADO"
-        ] = df.loc[
-            ~mascara_con_error,
-            "ESTADO"
-        ].replace(
-            "",
-            "OK"
-        )
-
+    
         return df
