@@ -177,11 +177,17 @@ COLUMNAS_CLAVE = [
     "PRODUCTO",
     "DOSIS X HA",
     "UNIDAD",
-    "CANTIDAD ",
+    "CANTIDAD",
     "UNIDADES - N",
     "UNIDADES - P",
     "UNIDADES - K",
-    "MENORES",
+    "UNIDADES - S",
+    "UNIDADES - MENORES",
+    "UNIDADES/HA - N",
+    "UNIDADES/HA - P",
+    "UNIDADES/HA - K",
+    "UNIDADES/HA - S",
+    "UNIDADES/HA - MENORES",
     "OBSERVACION"
 ]
 
