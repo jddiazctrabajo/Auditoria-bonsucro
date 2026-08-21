@@ -270,6 +270,9 @@ def cargar_maestro():
 # ===========================================================
 # PROCESADOR
 # ===========================================================
+# ===========================================================
+# PROCESADOR
+# ===========================================================
 
 def _ejecutar_procesador(carpeta):
 
@@ -286,18 +289,37 @@ def _ejecutar_procesador(carpeta):
     # OBSERVACIONES DE VALIDACIÓN
     # -------------------------------------------------------
 
-    if "OBSERVACIONES" in df_consolidado.columns:
+    # OBSERVACION es la columna principal generada
+    # por Procesador._agregar_observaciones()
+
+    if "OBSERVACION" not in df_consolidado.columns:
+
+        df_consolidado["OBSERVACION"] = ""
+
+    else:
 
         df_consolidado["OBSERVACION"] = (
-            df_consolidado["OBSERVACIONES"]
+            df_consolidado["OBSERVACION"]
             .fillna("")
             .astype(str)
             .str.strip()
         )
 
+    # -------------------------------------------------------
+    # Compatibilidad con versiones anteriores
+    # -------------------------------------------------------
+
+    if "OBSERVACIONES" not in df_consolidado.columns:
+
+        df_consolidado["OBSERVACIONES"] = (
+            df_consolidado["OBSERVACION"]
+        )
+
     else:
 
-        df_consolidado["OBSERVACION"] = ""
+        df_consolidado["OBSERVACIONES"] = (
+            df_consolidado["OBSERVACION"]
+        )
 
     # -------------------------------------------------------
     # Errores
@@ -319,7 +341,6 @@ def _ejecutar_procesador(carpeta):
             if errores_df
             else []
         )
-
 
     # -------------------------------------------------------
     # Detalles
