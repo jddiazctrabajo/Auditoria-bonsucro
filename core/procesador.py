@@ -1190,17 +1190,31 @@ class Procesador:
         return df
 
     # ==========================================================
-    # Validar información
-    # ==========================================================
-
-        # ==========================================================
-    # Validar información
+    # VALIDAR INFORMACIÓN
     # ==========================================================
 
     def _validar(self, df):
 
         # ------------------------------------------------------
-        # Asegurar columna OBSERVACION
+        # ASEGURAR COLUMNAS DE ESTADO Y OBSERVACIONES
+        # ------------------------------------------------------
+
+        if "ESTADO" not in df.columns:
+
+            df["ESTADO"] = "OK"
+
+        else:
+
+            df["ESTADO"] = (
+                df["ESTADO"]
+                .fillna("OK")
+                .astype(str)
+            )
+
+        # ------------------------------------------------------
+        # IMPORTANTE:
+        # Usamos OBSERVACION en singular porque es la columna
+        # que consume el consolidado visual.
         # ------------------------------------------------------
 
         if "OBSERVACION" not in df.columns:
@@ -1216,6 +1230,12 @@ class Procesador:
             )
 
         # ------------------------------------------------------
+        # LIMPIAR OBSERVACIONES ANTERIORES
+        # ------------------------------------------------------
+
+        df["OBSERVACION"] = ""
+
+        # ------------------------------------------------------
         # VALIDACIÓN HACIENDA
         # ------------------------------------------------------
 
@@ -1225,7 +1245,7 @@ class Procesador:
         # VALIDACIÓN SUERTE
         # ------------------------------------------------------
 
-        self.validador.validar_suerte(df)
+        df = self._validar_suerte(df)
 
         # ------------------------------------------------------
         # VALIDACIÓN UNIDADES DEL PRODUCTO
@@ -1233,17 +1253,41 @@ class Procesador:
 
         df = self._validar_unidades_producto(df)
 
-            # ==========================================================
-    # Validar código de Hacienda
+        # ------------------------------------------------------
+        # VALIDACIÓN ÁREA
+        # ------------------------------------------------------
+
+        df = self._validar_area(df)
+
+        # ------------------------------------------------------
+        # VALIDACIÓN UNIDADES POR HECTÁREA
+        # ------------------------------------------------------
+
+        df = self._validar_unidades_hectarea(df)
+
+        # ------------------------------------------------------
+        # PASAR TODOS LOS ERRORES A OBSERVACION
+        # ------------------------------------------------------
+
+        df = self._agregar_observaciones(df)
+
+        # ------------------------------------------------------
+        # DEVOLVER TABLA DE ERRORES
+        # ------------------------------------------------------
+
+        return pd.DataFrame(
+            self.validador.errores
+        )
+
+
+    # ==========================================================
+    # VALIDAR CÓDIGO DE HACIENDA
     # ==========================================================
 
     def _validar_hacienda(self, df):
 
-        # ------------------------------------------------------
-        # Verificar que exista la columna
-        # ------------------------------------------------------
-
         if "HACIENDA" not in df.columns:
+
             return df
 
         # ------------------------------------------------------
@@ -1272,16 +1316,20 @@ class Procesador:
 
         for idx in df.index:
 
-            hacienda = df.at[
+            hacienda_original = df.at[
                 idx,
                 "HACIENDA"
             ]
 
             # --------------------------------------------------
-            # Hacienda vacía
+            # HACIENDA VACÍA
             # --------------------------------------------------
 
-            if pd.isna(hacienda) or str(hacienda).strip() == "":
+            if (
+                pd.isna(hacienda_original)
+                or
+                str(hacienda_original).strip() == ""
+            ):
 
                 descripcion = (
                     "Código de Hacienda vacío."
@@ -1298,7 +1346,7 @@ class Procesador:
 
                     campo="HACIENDA",
 
-                    valor=hacienda,
+                    valor=hacienda_original,
 
                     descripcion=descripcion
 
@@ -1315,17 +1363,17 @@ class Procesador:
                 continue
 
             # --------------------------------------------------
-            # Normalizar código
+            # NORMALIZAR
             # --------------------------------------------------
 
             hacienda = str(
-                hacienda
+                hacienda_original
             ).strip().upper()
 
             # --------------------------------------------------
-            # Validar longitud
+            # VALIDAR FORMATO
             #
-            # Hacienda = 6 dígitos
+            # Hacienda debe tener 6 dígitos
             # --------------------------------------------------
 
             if not re.fullmatch(
@@ -1337,7 +1385,8 @@ class Procesador:
 
                     f"Código de Hacienda inválido: "
                     f"'{hacienda}'. "
-                    f"Debe contener 6 dígitos."
+                    f"Debe contener exactamente "
+                    f"6 dígitos."
 
                 )
 
@@ -1369,7 +1418,7 @@ class Procesador:
                 continue
 
             # --------------------------------------------------
-            # Validar existencia en prontuario
+            # VALIDAR EXISTENCIA EN PRONTUARIO
             # --------------------------------------------------
 
             if hacienda not in haciendas_prontuario:
@@ -1409,94 +1458,105 @@ class Procesador:
 
         return df
 
+
+    # ==========================================================
+    # VALIDAR SUERTE
+    # ==========================================================
+
+    def _validar_suerte(self, df):
+
+        if "SUERTE" not in df.columns:
+
+            return df
+
         # ------------------------------------------------------
-        # VALIDACIÓN ÁREA
+        # Verificar prontuario
         # ------------------------------------------------------
 
-        columnas = [
-            "AREA",
-            "CANTIDAD",
-            "DOSIS X HA"
-        ]
+        prontuario = self.prontuario.df.copy()
 
-        if all(
-            col in df.columns
-            for col in columnas
-        ):
+        tiene_prontuario = (
+            "HACIENDA" in prontuario.columns
+            and
+            "SUERTE" in prontuario.columns
+        )
 
-            area = pd.to_numeric(
-                df["AREA"],
-                errors="coerce"
-            )
+        # ------------------------------------------------------
+        # Crear conjunto de combinaciones válidas
+        #
+        # Ejemplo:
+        #
+        # 201020 | 001
+        # 201020 | 002A
+        # ------------------------------------------------------
 
-            cantidad = pd.to_numeric(
-                df["CANTIDAD"],
-                errors="coerce"
-            )
+        combinaciones_validas = set()
 
-            dosis = pd.to_numeric(
-                df["DOSIS X HA"],
-                errors="coerce"
-            )
+        if tiene_prontuario:
+
+            for _, fila in prontuario.iterrows():
+
+                hacienda = fila.get(
+                    "HACIENDA"
+                )
+
+                suerte = fila.get(
+                    "SUERTE"
+                )
+
+                if (
+                    pd.isna(hacienda)
+                    or
+                    pd.isna(suerte)
+                ):
+
+                    continue
+
+                hacienda = str(
+                    hacienda
+                ).strip().upper()
+
+                suerte = str(
+                    suerte
+                ).strip().upper()
+
+                combinaciones_validas.add(
+
+                    (
+                        hacienda,
+                        suerte
+                    )
+
+                )
+
+        # ------------------------------------------------------
+        # RECORRER REGISTROS
+        # ------------------------------------------------------
+
+        for idx in df.index:
+
+            suerte_original = df.at[
+                idx,
+                "SUERTE"
+            ]
+
+            hacienda_original = df.at[
+                idx,
+                "HACIENDA"
+            ]
 
             # --------------------------------------------------
-            # Evitar división por cero
+            # SUERTE VACÍA
             # --------------------------------------------------
 
-            mascara_base = (
-
-                area.notna()
-
-                & cantidad.notna()
-
-                & dosis.notna()
-
-                & (dosis != 0)
-
-            )
-
-            calculada = pd.Series(
-                np.nan,
-                index=df.index
-            )
-
-            calculada.loc[
-                mascara_base
-            ] = (
-
-                cantidad.loc[
-                    mascara_base
-                ]
-
-                /
-
-                dosis.loc[
-                    mascara_base
-                ]
-
-            )
-
-            diferencia = (
-                area - calculada
-            ).abs()
-
-            mascara_error = (
-
-                mascara_base
-
-                & calculada.notna()
-
-                & (diferencia > 0.01)
-
-            )
-
-            for idx in df.index[
-                mascara_error
-            ]:
+            if (
+                pd.isna(suerte_original)
+                or
+                str(suerte_original).strip() == ""
+            ):
 
                 descripcion = (
-                    "Área inconsistente: "
-                    "no coincide con Cantidad / Dosis."
+                    "Código de Suerte vacío."
                 )
 
                 self.validador.registrar_error(
@@ -1508,12 +1568,9 @@ class Procesador:
 
                     fila=idx + 2,
 
-                    campo="AREA",
+                    campo="SUERTE",
 
-                    valor=df.at[
-                        idx,
-                        "AREA"
-                    ],
+                    valor=suerte_original,
 
                     descripcion=descripcion
 
@@ -1522,49 +1579,160 @@ class Procesador:
                 df = self.validador.marcar_error(
 
                     df,
-
                     idx,
-
                     descripcion
 
                 )
 
-        # ------------------------------------------------------
-        # VALIDACIÓN DE UNIDADES/HA
-        # ------------------------------------------------------
+                continue
 
-        df = self._validar_unidades_hectarea(df)
+            # --------------------------------------------------
+            # NORMALIZAR
+            # --------------------------------------------------
 
-        # ------------------------------------------------------
-        # IMPORTANTE
-        #
-        # TODAS las validaciones ya fueron ejecutadas.
-        # Ahora pasamos los errores a OBSERVACION.
-        # ------------------------------------------------------
+            suerte = str(
+                suerte_original
+            ).strip().upper()
 
-        df = self._agregar_observaciones(df)
+            hacienda = str(
+                hacienda_original
+            ).strip().upper()
 
-        # ------------------------------------------------------
-        # Devolver errores
-        # ------------------------------------------------------
+            # --------------------------------------------------
+            # VALIDAR FORMATO
+            #
+            # Permitidos:
+            #
+            # 001
+            # 025
+            # 123
+            # 001A
+            # 025B
+            #
+            # Es decir:
+            # 3 números
+            # o
+            # 3 números + una letra
+            # --------------------------------------------------
 
-        return pd.DataFrame(
-            self.validador.errores
-        )
+            if not re.fullmatch(
+                r"\d{3}[A-Z]?",
+                suerte
+            ):
+
+                descripcion = (
+
+                    f"Código de Suerte inválido: "
+                    f"'{suerte}'. "
+                    f"Debe tener 3 dígitos "
+                    f"o 3 dígitos y una letra."
+
+                )
+
+                self.validador.registrar_error(
+
+                    archivo=df.at[
+                        idx,
+                        "ARCHIVO_ORIGEN"
+                    ],
+
+                    fila=idx + 2,
+
+                    campo="SUERTE",
+
+                    valor=suerte,
+
+                    descripcion=descripcion
+
+                )
+
+                df = self.validador.marcar_error(
+
+                    df,
+                    idx,
+                    descripcion
+
+                )
+
+                continue
+
+            # --------------------------------------------------
+            # VALIDAR QUE HACIENDA + SUERTE EXISTAN
+            # EN PRONTUARIO
+            #
+            # Solo si Hacienda tiene formato válido.
+            # --------------------------------------------------
+
+            if (
+                re.fullmatch(
+                    r"\d{6}",
+                    hacienda
+                )
+                and
+                tiene_prontuario
+            ):
+
+                combinacion = (
+                    hacienda,
+                    suerte
+                )
+
+                if (
+                    combinacion
+                    not in combinaciones_validas
+                ):
+
+                    descripcion = (
+
+                        f"La combinación "
+                        f"Hacienda '{hacienda}' "
+                        f"+ Suerte '{suerte}' "
+                        f"no existe en el prontuario."
+
+                    )
+
+                    self.validador.registrar_error(
+
+                        archivo=df.at[
+                            idx,
+                            "ARCHIVO_ORIGEN"
+                        ],
+
+                        fila=idx + 2,
+
+                        campo="SUERTE",
+
+                        valor=suerte,
+
+                        descripcion=descripcion
+
+                    )
+
+                    df = self.validador.marcar_error(
+
+                        df,
+                        idx,
+                        descripcion
+
+                    )
+
+        return df
 
 
     # ==========================================================
-    # Validar unidades del producto
+    # VALIDAR UNIDADES DEL PRODUCTO
     # ==========================================================
 
     def _validar_unidades_producto(self, df):
 
         elementos = [
+
             "N",
             "P",
             "K",
             "S",
             "MENORES"
+
         ]
 
         for idx in df.index:
@@ -1575,6 +1743,7 @@ class Procesador:
             ]
 
             if pd.isna(producto):
+
                 continue
 
             producto = str(
@@ -1588,6 +1757,7 @@ class Procesador:
             )
 
             if aportes is None:
+
                 continue
 
             for elemento in elementos:
@@ -1597,44 +1767,53 @@ class Procesador:
                 )
 
                 if columna not in df.columns:
+
                     continue
 
                 unidades = Calculos.numero(
+
                     df.at[
                         idx,
                         columna
                     ]
+
                 )
 
                 # --------------------------------------------------
-                # Si no registraron unidades, no hay error
+                # Si no registraron unidades,
+                # no hay error.
                 # --------------------------------------------------
 
                 if pd.isna(unidades):
+
                     continue
 
-                # --------------------------------------------------
-                # Aporte real del producto
-                # --------------------------------------------------
-
                 porcentaje = Calculos.numero(
+
                     aportes.get(
                         elemento,
                         0
                     )
+
                 )
 
                 if pd.isna(porcentaje):
+
                     porcentaje = 0
 
                 # --------------------------------------------------
                 # ERROR:
-                # Producto no contiene ese elemento
+                # Producto no contiene elemento
                 # --------------------------------------------------
 
                 if (
+
                     unidades != 0
-                    and porcentaje == 0
+
+                    and
+
+                    porcentaje == 0
+
                 ):
 
                     descripcion = (
@@ -1642,7 +1821,8 @@ class Procesador:
                         f"El producto '{producto}' "
                         f"no aporta {elemento}, "
                         f"pero se registraron "
-                        f"{unidades} unidades de {elemento}."
+                        f"{unidades} unidades de "
+                        f"{elemento}."
 
                     )
 
@@ -1666,12 +1846,169 @@ class Procesador:
                     df = self.validador.marcar_error(
 
                         df,
-
                         idx,
-
                         descripcion
 
                     )
+
+        return df
+
+
+    # ==========================================================
+    # VALIDAR ÁREA
+    # ==========================================================
+
+    def _validar_area(self, df):
+
+        columnas = [
+
+            "AREA",
+            "CANTIDAD",
+            "DOSIS X HA"
+
+        ]
+
+        # ------------------------------------------------------
+        # Verificar columnas
+        # ------------------------------------------------------
+
+        if not all(
+            col in df.columns
+            for col in columnas
+        ):
+
+            return df
+
+        area = pd.to_numeric(
+
+            df["AREA"],
+            errors="coerce"
+
+        )
+
+        cantidad = pd.to_numeric(
+
+            df["CANTIDAD"],
+            errors="coerce"
+
+        )
+
+        dosis = pd.to_numeric(
+
+            df["DOSIS X HA"],
+            errors="coerce"
+
+        )
+
+        # ------------------------------------------------------
+        # Solo validar cuando existen los tres valores
+        # ------------------------------------------------------
+
+        mascara_base = (
+
+            area.notna()
+
+            & cantidad.notna()
+
+            & dosis.notna()
+
+            & (dosis != 0)
+
+        )
+
+        calculada = pd.Series(
+
+            np.nan,
+            index=df.index
+
+        )
+
+        calculada.loc[
+            mascara_base
+        ] = (
+
+            cantidad.loc[
+                mascara_base
+            ]
+
+            /
+
+            dosis.loc[
+                mascara_base
+            ]
+
+        )
+
+        diferencia = (
+
+            area
+            -
+            calculada
+
+        ).abs()
+
+        # ------------------------------------------------------
+        # Tolerancia de 0.01 ha
+        # ------------------------------------------------------
+
+        mascara_error = (
+
+            mascara_base
+
+            & calculada.notna()
+
+            & (
+                diferencia > 0.01
+            )
+
+        )
+
+        # ------------------------------------------------------
+        # Registrar errores
+        # ------------------------------------------------------
+
+        for idx in df.index[
+            mascara_error
+        ]:
+
+            descripcion = (
+
+                "Área inconsistente: "
+                "el área registrada "
+                f"({area.loc[idx]:.4f}) "
+                "no coincide con "
+                "Cantidad / Dosis "
+                f"({calculada.loc[idx]:.4f})."
+
+            )
+
+            self.validador.registrar_error(
+
+                archivo=df.at[
+                    idx,
+                    "ARCHIVO_ORIGEN"
+                ],
+
+                fila=idx + 2,
+
+                campo="AREA",
+
+                valor=df.at[
+                    idx,
+                    "AREA"
+                ],
+
+                descripcion=descripcion
+
+            )
+
+            df = self.validador.marcar_error(
+
+                df,
+                idx,
+                descripcion
+
+            )
 
         return df
 
@@ -1683,30 +2020,36 @@ class Procesador:
     def _validar_unidades_hectarea(self, df):
 
         # ------------------------------------------------------
-        # Rangos permitidos
+        # RANGOS PERMITIDOS
         # ------------------------------------------------------
 
         rangos = {
 
             "N": {
+
                 "min": 140,
                 "max": 180
+
             },
 
             "P": {
+
                 "min": 25,
                 "max": 50
+
             },
 
             "K": {
+
                 "min": 30,
                 "max": 90
+
             }
 
         }
 
         # ------------------------------------------------------
-        # Verificar AREA
+        # Verificar área
         # ------------------------------------------------------
 
         if "AREA" not in df.columns:
@@ -1714,8 +2057,10 @@ class Procesador:
             return df
 
         area = pd.to_numeric(
+
             df["AREA"],
             errors="coerce"
+
         )
 
         # ------------------------------------------------------
@@ -1727,14 +2072,19 @@ class Procesador:
             area_valor = area.loc[idx]
 
             # --------------------------------------------------
-            # Si no existe área no podemos calcular unidades/ha
+            # No podemos calcular si no hay área
             # --------------------------------------------------
 
             if pd.isna(area_valor):
+
                 continue
 
+            # --------------------------------------------------
             # Evitar división por cero
+            # --------------------------------------------------
+
             if area_valor == 0:
+
                 continue
 
             # --------------------------------------------------
@@ -1748,48 +2098,61 @@ class Procesador:
                 )
 
                 if columna not in df.columns:
+
                     continue
 
+                # --------------------------------------------------
+                # Tomar el VALOR FINAL de unidades
+                # --------------------------------------------------
+
                 unidades = Calculos.numero(
+
                     df.at[
                         idx,
                         columna
                     ]
+
                 )
 
-                # --------------------------------------------------
-                # Si no existe valor no se puede validar
-                # --------------------------------------------------
-
                 if pd.isna(unidades):
+
                     continue
 
                 # --------------------------------------------------
-                # Cálculo UNIDADES / HA
+                # CALCULAR UNIDADES / HA
                 # --------------------------------------------------
 
                 unidades_ha = (
+
                     unidades
                     /
                     area_valor
+
                 )
 
                 unidades_ha = round(
+
                     unidades_ha,
                     2
+
                 )
 
                 minimo = rango["min"]
+
                 maximo = rango["max"]
 
                 # --------------------------------------------------
-                # Validar rango
+                # VALIDAR RANGO
                 # --------------------------------------------------
 
                 if (
+
                     unidades_ha < minimo
+
                     or
+
                     unidades_ha > maximo
+
                 ):
 
                     descripcion = (
@@ -1801,10 +2164,6 @@ class Procesador:
                         f"{minimo} - {maximo} unidades/ha."
 
                     )
-
-                    # ----------------------------------------------
-                    # Registrar error
-                    # ----------------------------------------------
 
                     self.validador.registrar_error(
 
@@ -1825,16 +2184,10 @@ class Procesador:
 
                     )
 
-                    # ----------------------------------------------
-                    # Marcar registro
-                    # ----------------------------------------------
-
                     df = self.validador.marcar_error(
 
                         df,
-
                         idx,
-
                         descripcion
 
                     )
@@ -1843,13 +2196,13 @@ class Procesador:
 
 
     # ==========================================================
-    # AGREGAR OBSERVACIONES AL CONSOLIDADO
+    # AGREGAR TODAS LAS OBSERVACIONES
     # ==========================================================
 
     def _agregar_observaciones(self, df):
 
         # ------------------------------------------------------
-        # Crear columna si no existe
+        # Crear columna
         # ------------------------------------------------------
 
         if "OBSERVACION" not in df.columns:
@@ -1859,9 +2212,11 @@ class Procesador:
         else:
 
             df["OBSERVACION"] = (
+
                 df["OBSERVACION"]
                 .fillna("")
                 .astype(str)
+
             )
 
         # ------------------------------------------------------
@@ -1870,42 +2225,63 @@ class Procesador:
 
         for error in self.validador.errores:
 
-            fila = error.get("fila")
+            fila = error.get(
+                "fila"
+            )
 
             descripcion = (
 
-                error.get("descripcion")
+                error.get(
+                    "descripcion"
+                )
 
-                or error.get("DESCRIPCION")
+                or
 
-                or error.get("ERROR")
+                error.get(
+                    "DESCRIPCION"
+                )
 
-                or ""
+                or
+
+                error.get(
+                    "ERROR"
+                )
+
+                or
+
+                ""
 
             )
 
             if not descripcion:
+
                 continue
 
             if fila is None:
+
                 continue
 
             try:
 
                 # --------------------------------------------------
-                # El error se registra como idx + 2
+                # Los errores se registran como idx + 2
                 # --------------------------------------------------
 
-                indice = int(fila) - 2
+                indice = (
+                    int(fila) - 2
+                )
 
                 if indice not in df.index:
+
                     continue
 
                 observacion_actual = str(
+
                     df.at[
                         indice,
                         "OBSERVACION"
                     ]
+
                 )
 
                 # --------------------------------------------------
@@ -1913,38 +2289,95 @@ class Procesador:
                 # --------------------------------------------------
 
                 if observacion_actual in [
+
                     "",
                     "nan",
                     "None"
+
                 ]:
 
                     df.at[
+
                         indice,
                         "OBSERVACION"
+
                     ] = descripcion
 
                 # --------------------------------------------------
-                # Ya existe una observación
-                # Agregar la nueva SIN borrar la anterior
+                # Agregar observación sin borrar las anteriores
                 # --------------------------------------------------
 
                 else:
 
-                    df.at[
-                        indice,
-                        "OBSERVACION"
-                    ] = (
+                    # Evitar duplicados exactos
+
+                    observaciones_existentes = (
 
                         observacion_actual
-
-                        + " | "
-
-                        + descripcion
+                        .split(" | ")
 
                     )
+
+                    if (
+
+                        descripcion
+                        not in
+                        observaciones_existentes
+
+                    ):
+
+                        df.at[
+
+                            indice,
+                            "OBSERVACION"
+
+                        ] = (
+
+                            observacion_actual
+                            + " | "
+                            + descripcion
+
+                        )
 
             except Exception:
 
                 continue
 
+        # ------------------------------------------------------
+        # Estado final
+        # ------------------------------------------------------
+
+        # Si existe al menos una observación,
+        # el registro queda como ERROR.
+
+        mascara_con_error = (
+
+            df["OBSERVACION"]
+            .fillna("")
+            .astype(str)
+            .str.strip()
+            .ne("")
+
+        )
+
+        df.loc[
+            mascara_con_error,
+            "ESTADO"
+        ] = "ERROR"
+
+        # ------------------------------------------------------
+        # IMPORTANTE:
+        #
+        # Si tu aplicación utiliza OBSERVACIONES en vez de
+        # OBSERVACION, mantenemos una copia.
+        #
+        # Esto evita que desaparezcan las observaciones del
+        # visual si algún módulo antiguo todavía usa ese nombre.
+        # ------------------------------------------------------
+
+        df["OBSERVACIONES"] = (
+            df["OBSERVACION"]
+        )
+
         return df
+    
