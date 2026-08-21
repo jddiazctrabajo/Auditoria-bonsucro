@@ -8,7 +8,14 @@ Orquestar todo el proceso de consolidación.
 
 NO realiza cálculos directamente.
 NO consulta Excel directamente.
-Utiliza ExcelReader, Maestro y Prontuario.
+
+Utiliza:
+- ExcelReader
+- Homologador
+- Maestro
+- Prontuario
+- Calculos
+- Validador
 
 Flujo:
 
@@ -45,22 +52,32 @@ from core.validaciones import Validador
 class Procesador:
 
     # ==========================================================
-    # Constructor
+    # CONSTRUCTOR
     # ==========================================================
 
     def __init__(self, ruta_maestro, ruta_prontuario):
 
         self.reader = ExcelReader()
 
-        self.homologador = Homologador(ruta_maestro)
+        self.homologador = Homologador(
+            ruta_maestro
+        )
 
-        self.maestro = Maestro(ruta_maestro)
+        self.maestro = Maestro(
+            ruta_maestro
+        )
 
-        self.prontuario = Prontuario(ruta_prontuario)
+        self.prontuario = Prontuario(
+            ruta_prontuario
+        )
 
         self.calculos = Calculos()
 
         self.validador = Validador()
+
+        # ------------------------------------------------------
+        # Columnas mínimas esperadas
+        # ------------------------------------------------------
 
         self.columnas_esperadas = [
 
@@ -71,43 +88,86 @@ class Procesador:
             "CANTIDAD",
             "UNIDAD",
             "DOSIS X HA",
+
             "UNIDADES - N",
             "UNIDADES - P",
             "UNIDADES - K",
             "UNIDADES - S",
             "UNIDADES - MENORES"
+
         ]
 
     # ==========================================================
-    # Método principal
+    # MÉTODO PRINCIPAL
     # ==========================================================
 
     def procesar(self, carpeta):
 
-        df = self._leer_archivos(carpeta)
+        # ------------------------------------------------------
+        # 1. Leer archivos
+        # ------------------------------------------------------
 
-        df = self._homologar(df)
+        df = self._leer_archivos(
+            carpeta
+        )
 
-        df = self._completar_prontuario(df)
+        # ------------------------------------------------------
+        # 2. Homologar
+        # ------------------------------------------------------
 
-        df = self._completar_maestro(df)
+        df = self._homologar(
+            df
+        )
 
-        df = self._calcular(df)
+        # ------------------------------------------------------
+        # 3. Completar desde prontuario
+        # ------------------------------------------------------
 
-        errores = self._validar(df)
+        df = self._completar_prontuario(
+            df
+        )
+
+        # ------------------------------------------------------
+        # 4. Completar desde maestro
+        # ------------------------------------------------------
+
+        df = self._completar_maestro(
+            df
+        )
+
+        # ------------------------------------------------------
+        # 5. Ejecutar cálculos
+        # ------------------------------------------------------
+
+        df = self._calcular(
+            df
+        )
+
+        # ------------------------------------------------------
+        # 6. Validar
+        # ------------------------------------------------------
+
+        errores = self._validar(
+            df
+        )
 
         return df, errores
 
     # ==========================================================
-    # Leer archivos
+    # LEER ARCHIVOS
     # ==========================================================
 
     def _leer_archivos(self, carpeta):
 
         carpeta = Path(carpeta)
 
-        archivos = list(carpeta.rglob("*.xlsx"))
-        archivos.extend(carpeta.rglob("*.xlsm"))
+        archivos = list(
+            carpeta.rglob("*.xlsx")
+        )
+
+        archivos.extend(
+            carpeta.rglob("*.xlsm")
+        )
 
         if len(archivos) == 0:
 
@@ -127,7 +187,9 @@ class Procesador:
 
                     hoja="FORMATO FERT",
 
-                    columnas_esperadas=self.columnas_esperadas
+                    columnas_esperadas=(
+                        self.columnas_esperadas
+                    )
 
                 )
 
@@ -145,17 +207,25 @@ class Procesador:
                     df.columns.tolist()
                 )
 
-                # ------------------------------------------
+                # --------------------------------------------------
                 # Trazabilidad
-                # ------------------------------------------
+                # --------------------------------------------------
 
-                df["RAZON_SOCIAL"] = archivo.parent.name
+                df["RAZON_SOCIAL"] = (
+                    archivo.parent.name
+                )
 
-                df["HACIENDA_ARCHIVO"] = archivo.stem
+                df["HACIENDA_ARCHIVO"] = (
+                    archivo.stem
+                )
 
-                df["ARCHIVO_ORIGEN"] = archivo.name
+                df["ARCHIVO_ORIGEN"] = (
+                    archivo.name
+                )
 
-                lista_df.append(df)
+                lista_df.append(
+                    df
+                )
 
             except Exception as e:
 
@@ -191,19 +261,35 @@ class Procesador:
             drop=True
         )
 
+        # ------------------------------------------------------
+        # Estado
+        # ------------------------------------------------------
+
         consolidado["ESTADO"] = "OK"
+
+        # ------------------------------------------------------
+        # Observaciones
+        #
+        # Mantenemos ambas columnas porque algunas partes
+        # de la aplicación pueden utilizar cualquiera de las
+        # dos variantes.
+        # ------------------------------------------------------
+
+        consolidado["OBSERVACION"] = ""
 
         consolidado["OBSERVACIONES"] = ""
 
         return consolidado
 
     # ==========================================================
-    # Homologar información
+    # HOMOLOGAR INFORMACIÓN
     # ==========================================================
 
     def _homologar(self, df):
 
-        df = self.homologador.dataframe(df)
+        df = self.homologador.dataframe(
+            df
+        )
 
         # ------------------------------------------------------
         # Normalizar texto
@@ -215,7 +301,9 @@ class Procesador:
 
                 return ""
 
-            texto = str(texto).upper().strip()
+            texto = str(
+                texto
+            ).upper().strip()
 
             texto = unicodedata.normalize(
                 "NFKD",
@@ -223,9 +311,12 @@ class Procesador:
             )
 
             texto = "".join(
+
                 c
                 for c in texto
+
                 if not unicodedata.combining(c)
+
             )
 
             texto = " ".join(
@@ -250,8 +341,9 @@ class Procesador:
 
             if col in df.columns:
 
-                df[col] = df[col].apply(
-                    normalizar_texto
+                df[col] = (
+                    df[col]
+                    .apply(normalizar_texto)
                 )
 
         # ------------------------------------------------------
@@ -260,7 +352,9 @@ class Procesador:
 
         def limpiar_nombre(col):
 
-            name = str(col).strip()
+            name = str(
+                col
+            ).strip()
 
             name = re.sub(
                 r'[\u200B-\u200D\uFEFF]',
@@ -295,20 +389,28 @@ class Procesador:
             return name
 
         df.rename(
-            columns=lambda c: limpiar_nombre(c),
+
+            columns=lambda c:
+                limpiar_nombre(c),
+
             inplace=True
+
         )
 
         # ------------------------------------------------------
-        # Reconocer variantes de columnas de unidades
+        # Reconocer variantes de columnas
         # ------------------------------------------------------
 
         def normalizar_columna(col):
 
             return re.sub(
+
                 r"[^A-Za-z0-9]",
+
                 "",
+
                 str(col)
+
             ).upper()
 
         unidades_esperadas = [
@@ -332,7 +434,9 @@ class Procesador:
             )[1]
 
             objetivo = normalizar_columna(
+
                 f"UNIDADES{elemento}"
+
             )
 
             for col in df.columns:
@@ -343,16 +447,19 @@ class Procesador:
                 ):
 
                     df.rename(
+
                         columns={
                             col: expected
                         },
+
                         inplace=True
+
                     )
 
                     break
 
         # ------------------------------------------------------
-        # Asegurar columnas de unidades
+        # Asegurar columnas
         # ------------------------------------------------------
 
         for columna in unidades_esperadas:
@@ -364,14 +471,17 @@ class Procesador:
         return df
 
     # ==========================================================
-    # Completar desde prontuario
+    # COMPLETAR DESDE PRONTUARIO
     # ==========================================================
 
     def _completar_prontuario(self, df):
 
-        prontuario = self.prontuario.df.copy()
+        prontuario = (
+            self.prontuario.df.copy()
+        )
 
         prontuario = prontuario.rename(
+
             columns={
 
                 "AREA":
@@ -387,6 +497,7 @@ class Procesador:
                     "TCH_ACTUAL_PRONTUARIO"
 
             }
+
         )
 
         columnas = [
@@ -400,7 +511,9 @@ class Procesador:
 
         ]
 
-        prontuario = prontuario[columnas]
+        prontuario = prontuario[
+            columnas
+        ]
 
         df = df.merge(
 
@@ -421,12 +534,15 @@ class Procesador:
 
         if "AREA" in df.columns:
 
-            df["AREA"] = df["AREA"].fillna(
-                df["AREA_PRONTUARIO"]
+            df["AREA"] = (
+                df["AREA"]
+                .fillna(
+                    df["AREA_PRONTUARIO"]
+                )
             )
 
         # ------------------------------------------------------
-        # Agregar información del prontuario
+        # Agregar información
         # ------------------------------------------------------
 
         if "VARIEDAD" not in df.columns:
@@ -471,14 +587,17 @@ class Procesador:
         return df
 
     # ==========================================================
-    # Completar desde Maestro
+    # COMPLETAR DESDE MAESTRO
     # ==========================================================
 
     def _completar_maestro(self, df):
 
-        maestro = self.maestro.df.copy()
+        maestro = (
+            self.maestro.df.copy()
+        )
 
         maestro = maestro.rename(
+
             columns={
 
                 "NOMBRE COMERCIAL":
@@ -500,6 +619,7 @@ class Procesador:
                     "PORC_MENORES"
 
             }
+
         )
 
         # ------------------------------------------------------
@@ -512,7 +632,9 @@ class Procesador:
 
                 return ""
 
-            texto = str(texto).upper().strip()
+            texto = str(
+                texto
+            ).upper().strip()
 
             texto = unicodedata.normalize(
                 "NFKD",
@@ -520,9 +642,12 @@ class Procesador:
             )
 
             texto = "".join(
+
                 c
                 for c in texto
+
                 if not unicodedata.combining(c)
+
             )
 
             texto = " ".join(
@@ -547,7 +672,9 @@ class Procesador:
 
         ]
 
-        maestro = maestro[columnas]
+        maestro = maestro[
+            columnas
+        ]
 
         df = df.merge(
 
@@ -562,7 +689,7 @@ class Procesador:
         return df
 
     # ==========================================================
-    # Calcular Área
+    # CALCULAR ÁREA
     # ==========================================================
 
     def _calcular_area(self, df):
@@ -582,21 +709,44 @@ class Procesador:
         )
 
         area = pd.to_numeric(
-            df.loc[mascara, "AREA"],
+
+            df.loc[
+                mascara,
+                "AREA"
+            ],
+
             errors="coerce"
+
         )
 
         cantidad = pd.to_numeric(
-            df.loc[mascara, "CANTIDAD"],
+
+            df.loc[
+                mascara,
+                "CANTIDAD"
+            ],
+
             errors="coerce"
+
         )
 
         dosis = pd.to_numeric(
-            df.loc[mascara, "DOSIS X HA"],
+
+            df.loc[
+                mascara,
+                "DOSIS X HA"
+            ],
+
             errors="coerce"
+
         )
 
-        mascara_valida = dosis != 0
+        mascara_valida = (
+
+            dosis.notna()
+            & (dosis != 0)
+
+        )
 
         indices = df.loc[
             mascara
@@ -618,7 +768,7 @@ class Procesador:
         return df
 
     # ==========================================================
-    # Calcular Cantidad
+    # CALCULAR CANTIDAD
     # ==========================================================
 
     def _calcular_cantidad(self, df):
@@ -634,18 +784,33 @@ class Procesador:
         )
 
         area = pd.to_numeric(
-            df.loc[mascara, "AREA"],
+
+            df.loc[
+                mascara,
+                "AREA"
+            ],
+
             errors="coerce"
+
         )
 
         dosis = pd.to_numeric(
-            df.loc[mascara, "DOSIS X HA"],
+
+            df.loc[
+                mascara,
+                "DOSIS X HA"
+            ],
+
             errors="coerce"
+
         )
 
         mascara_valida = (
+
             area.notna()
             & dosis.notna()
+            & (area != 0)
+
         )
 
         indices = df.loc[
@@ -668,7 +833,7 @@ class Procesador:
         return df
 
     # ==========================================================
-    # Calcular Dosis
+    # CALCULAR DOSIS
     # ==========================================================
 
     def _calcular_dosis(self, df):
@@ -684,19 +849,33 @@ class Procesador:
         )
 
         area = pd.to_numeric(
-            df.loc[mascara, "AREA"],
+
+            df.loc[
+                mascara,
+                "AREA"
+            ],
+
             errors="coerce"
+
         )
 
         cantidad = pd.to_numeric(
-            df.loc[mascara, "CANTIDAD"],
+
+            df.loc[
+                mascara,
+                "CANTIDAD"
+            ],
+
             errors="coerce"
+
         )
 
         mascara_valida = (
+
             area.notna()
             & cantidad.notna()
             & (area != 0)
+
         )
 
         indices = df.loc[
@@ -750,10 +929,6 @@ class Procesador:
 
         }
 
-        # ------------------------------------------------------
-        # Verificar CANTIDAD
-        # ------------------------------------------------------
-
         if "CANTIDAD" not in df.columns:
 
             print(
@@ -762,18 +937,12 @@ class Procesador:
 
             return df
 
-        # ------------------------------------------------------
-        # Asegurar cantidad numérica
-        # ------------------------------------------------------
-
         df["CANTIDAD"] = pd.to_numeric(
+
             df["CANTIDAD"],
             errors="coerce"
-        )
 
-        # ------------------------------------------------------
-        # Procesar elementos
-        # ------------------------------------------------------
+        )
 
         for elemento, columna_porcentaje in elementos.items():
 
@@ -781,47 +950,27 @@ class Procesador:
                 f"UNIDADES - {elemento}"
             )
 
-            # --------------------------------------------------
-            # Crear columna si no existe
-            # --------------------------------------------------
-
             if nombre_unidades not in df.columns:
 
                 df[nombre_unidades] = pd.NA
-
-            # --------------------------------------------------
-            # Si no existe porcentaje no podemos calcular
-            # --------------------------------------------------
 
             if columna_porcentaje not in df.columns:
 
                 continue
 
             df[columna_porcentaje] = pd.to_numeric(
+
                 df[columna_porcentaje],
                 errors="coerce"
-            )
 
-            # --------------------------------------------------
-            # MUY IMPORTANTE
-            #
-            # Convertimos solamente para evaluar.
-            # NO reemplazamos todavía la columna.
-            # --------------------------------------------------
+            )
 
             unidades_actuales = pd.to_numeric(
+
                 df[nombre_unidades],
                 errors="coerce"
-            )
 
-            # --------------------------------------------------
-            # Calcular únicamente donde:
-            #
-            # 1. No existe unidad
-            # 2. Existe cantidad
-            # 3. Existe porcentaje
-            # 4. Porcentaje > 0
-            # --------------------------------------------------
+            )
 
             mascara = (
 
@@ -838,17 +987,21 @@ class Procesador:
             )
 
             cantidad_calcular = (
+
                 df.loc[
                     mascara,
                     "CANTIDAD"
                 ]
+
             )
 
             porcentaje_calcular = (
+
                 df.loc[
                     mascara,
                     columna_porcentaje
                 ]
+
             )
 
             df.loc[
@@ -865,8 +1018,10 @@ class Procesador:
             ).round(4)
 
             print(
+
                 f"{nombre_unidades}: "
                 f"{mascara.sum()} calculados"
+
             )
 
         print(
@@ -898,38 +1053,29 @@ class Procesador:
         )
 
         elementos = [
+
             "N",
             "P",
             "K",
             "S",
             "MENORES"
-        ]
 
-        # ------------------------------------------------------
-        # Verificar AREA
-        # ------------------------------------------------------
+        ]
 
         if "AREA" not in df.columns:
 
             print(
-                "No existe AREA. "
-                "No se pueden calcular unidades/ha."
+                "No existe AREA."
             )
 
             return df
 
-        # ------------------------------------------------------
-        # Convertir AREA a numérico
-        # ------------------------------------------------------
-
         area = pd.to_numeric(
+
             df["AREA"],
             errors="coerce"
-        )
 
-        # ------------------------------------------------------
-        # Calcular cada elemento
-        # ------------------------------------------------------
+        )
 
         for elemento in elementos:
 
@@ -942,29 +1088,34 @@ class Procesador:
             )
 
             # --------------------------------------------------
-            # Crear columna de salida
+            # Crear columna
             # --------------------------------------------------
 
-            if columna_unidades_ha not in df.columns:
+            if (
+                columna_unidades_ha
+                not in df.columns
+            ):
 
-                df[columna_unidades_ha] = pd.NA
+                df[
+                    columna_unidades_ha
+                ] = pd.NA
 
-            # --------------------------------------------------
-            # Si no existe la columna de unidades
-            # --------------------------------------------------
-
-            if columna_unidades not in df.columns:
+            if (
+                columna_unidades
+                not in df.columns
+            ):
 
                 continue
 
             unidades = pd.to_numeric(
-                df[columna_unidades],
-                errors="coerce"
-            )
 
-            # --------------------------------------------------
-            # Condiciones para calcular
-            # --------------------------------------------------
+                df[
+                    columna_unidades
+                ],
+
+                errors="coerce"
+
+            )
 
             mascara = (
 
@@ -976,24 +1127,28 @@ class Procesador:
 
             )
 
-            # --------------------------------------------------
-            # Calcular unidades / hectárea
-            # --------------------------------------------------
-
             df.loc[
                 mascara,
                 columna_unidades_ha
             ] = (
 
-                unidades.loc[mascara]
+                unidades.loc[
+                    mascara
+                ]
+
                 /
-                area.loc[mascara]
+
+                area.loc[
+                    mascara
+                ]
 
             ).round(2)
 
             print(
+
                 f"{columna_unidades_ha}: "
                 f"{mascara.sum()} calculados"
+
             )
 
         print(
@@ -1005,9 +1160,9 @@ class Procesador:
         )
 
         return df
-    
+
     # ==========================================================
-    # Calcular Producto a partir de unidades suministradas
+    # CALCULAR PRODUCTO A PARTIR DE UNIDADES
     # ==========================================================
 
     def _calcular_producto(self, df):
@@ -1026,29 +1181,23 @@ class Procesador:
 
         for idx in df.index:
 
-            # --------------------------------------------------
-            # Cantidad actual
-            # --------------------------------------------------
-
             cantidad = Calculos.numero(
+
                 df.at[
                     idx,
                     "CANTIDAD"
                 ]
+
             )
 
             # --------------------------------------------------
-            # Si ya tiene cantidad,
-            # NO modificarla
+            # Si ya existe cantidad,
+            # no modificarla
             # --------------------------------------------------
 
             if not pd.isna(cantidad):
 
                 continue
-
-            # --------------------------------------------------
-            # Producto
-            # --------------------------------------------------
 
             producto = df.at[
                 idx,
@@ -1059,10 +1208,6 @@ class Procesador:
 
                 continue
 
-            # --------------------------------------------------
-            # Buscar producto en Maestro
-            # --------------------------------------------------
-
             aportes = (
                 self.maestro.obtener_aportes(
                     producto
@@ -1072,10 +1217,6 @@ class Procesador:
             if aportes is None:
 
                 continue
-
-            # --------------------------------------------------
-            # Buscar unidades suministradas
-            # --------------------------------------------------
 
             for elemento in [
 
@@ -1088,7 +1229,9 @@ class Procesador:
             ]:
 
                 columna_unidades = (
+
                     f"UNIDADES - {elemento}"
+
                 )
 
                 if (
@@ -1099,23 +1242,22 @@ class Procesador:
                     continue
 
                 unidades = Calculos.numero(
+
                     df.at[
                         idx,
                         columna_unidades
                     ]
+
                 )
 
                 porcentaje = Calculos.numero(
+
                     aportes.get(
                         elemento,
                         0
                     )
-                )
 
-                # --------------------------------------------------
-                # Si existen unidades y porcentaje,
-                # calcular cantidad
-                # --------------------------------------------------
+                )
 
                 if Calculos.puede_calcular_cantidad_por_elemento(
 
@@ -1126,10 +1268,14 @@ class Procesador:
                 ):
 
                     cantidad_calculada = (
+
                         Calculos.calcular_producto(
+
                             unidades,
                             porcentaje
+
                         )
+
                     )
 
                     if not pd.isna(
@@ -1139,7 +1285,9 @@ class Procesador:
                         df.at[
                             idx,
                             "CANTIDAD"
-                        ] = cantidad_calculada
+                        ] = (
+                            cantidad_calculada
+                        )
 
                         cantidad = (
                             cantidad_calculada
@@ -1148,27 +1296,26 @@ class Procesador:
                         break
 
             # --------------------------------------------------
-            # Después de calcular cantidad,
-            # intentar calcular dosis
+            # AREA + CANTIDAD → DOSIS
             # --------------------------------------------------
 
             area = Calculos.numero(
+
                 df.at[
                     idx,
                     "AREA"
                 ]
+
             )
 
             dosis = Calculos.numero(
+
                 df.at[
                     idx,
                     "DOSIS X HA"
                 ]
-            )
 
-            # --------------------------------------------------
-            # AREA + CANTIDAD → DOSIS
-            # --------------------------------------------------
+            )
 
             if (
 
@@ -1181,10 +1328,14 @@ class Procesador:
             ):
 
                 nueva_dosis = (
+
                     Calculos.calcular_dosis(
+
                         area,
                         cantidad
+
                     )
+
                 )
 
                 df.at[
@@ -1209,10 +1360,14 @@ class Procesador:
             ):
 
                 nueva_area = (
+
                     Calculos.calcular_area(
+
                         cantidad,
                         dosis
+
                     )
+
                 )
 
                 df.at[
@@ -1252,55 +1407,99 @@ class Procesador:
         # 1. AREA desde CANTIDAD / DOSIS
         # ------------------------------------------------------
 
-        df = self._calcular_area(df)
+        df = self._calcular_area(
+            df
+        )
 
         # ------------------------------------------------------
         # 2. CANTIDAD desde AREA × DOSIS
         # ------------------------------------------------------
 
-        df = self._calcular_cantidad(df)
+        df = self._calcular_cantidad(
+            df
+        )
 
         # ------------------------------------------------------
         # 3. DOSIS desde CANTIDAD / AREA
         # ------------------------------------------------------
 
-        df = self._calcular_dosis(df)
+        df = self._calcular_dosis(
+            df
+        )
 
         # ------------------------------------------------------
         # 4. UNIDADES desde CANTIDAD × porcentaje
-        #
-        # Solo llena unidades vacías.
         # ------------------------------------------------------
 
-        df = self._calcular_elementos(df)
+        df = self._calcular_elementos(
+            df
+        )
 
         # ------------------------------------------------------
-        # 5. Si todavía falta CANTIDAD,
-        # buscar unidades suministradas por usuario.
+        # 5. Si falta cantidad,
+        # calcularla desde unidades
         # ------------------------------------------------------
 
-        df = self._calcular_producto(df)
+        df = self._calcular_producto(
+            df
+        )
 
         # ------------------------------------------------------
         # 6. Volver a completar AREA
         # ------------------------------------------------------
 
-        df = self._calcular_area(df)
+        df = self._calcular_area(
+            df
+        )
 
         # ------------------------------------------------------
         # 7. Volver a completar DOSIS
         # ------------------------------------------------------
 
-        df = self._calcular_dosis(df)
+        df = self._calcular_dosis(
+            df
+        )
 
         # ------------------------------------------------------
-        # 8. Ahora que CANTIDAD pudo haber sido calculada,
-        # completar las unidades que sigan vacías.
+        # 8. Completar unidades nuevamente
+        # ------------------------------------------------------
+
+        df = self._calcular_elementos(
+            df
+        )
+
+        # ------------------------------------------------------
+        # 9. CALCULAR UNIDADES POR HECTÁREA
         #
-        # Las unidades existentes se conservan.
+        # IMPORTANTE:
+        # Este cálculo debe hacerse DESPUÉS de tener:
+        #
+        # AREA
+        # CANTIDAD
+        # UNIDADES - N
+        # UNIDADES - P
+        # UNIDADES - K
+        # UNIDADES - S
+        # UNIDADES - MENORES
+        #
+        # De esta forma las columnas quedan listas para
+        # enviarse al consolidado.
         # ------------------------------------------------------
 
-        df = self._calcular_elementos(df)
+        df = self._calcular_unidades_hectarea(
+            df
+        )
+
+        # ------------------------------------------------------
+        # 10. Segundo cálculo de unidades/ha
+        #
+        # Esto protege el caso en que alguna cantidad o unidad
+        # haya sido calculada durante el paso anterior.
+        # ------------------------------------------------------
+
+        df = self._calcular_unidades_hectarea(
+            df
+        )
 
         print(
             "\n########################################"
@@ -1323,7 +1522,7 @@ class Procesador:
     def _validar(self, df):
 
         # ------------------------------------------------------
-        # ASEGURAR COLUMNAS DE ESTADO Y OBSERVACIONES
+        # ASEGURAR ESTADO
         # ------------------------------------------------------
 
         if "ESTADO" not in df.columns:
@@ -1333,15 +1532,15 @@ class Procesador:
         else:
 
             df["ESTADO"] = (
+
                 df["ESTADO"]
                 .fillna("OK")
                 .astype(str)
+
             )
 
         # ------------------------------------------------------
-        # IMPORTANTE:
-        # Usamos OBSERVACION en singular porque es la columna
-        # que consume el consolidado visual.
+        # ASEGURAR OBSERVACION
         # ------------------------------------------------------
 
         if "OBSERVACION" not in df.columns:
@@ -1351,64 +1550,81 @@ class Procesador:
         else:
 
             df["OBSERVACION"] = (
+
                 df["OBSERVACION"]
                 .fillna("")
                 .astype(str)
+
             )
 
         # ------------------------------------------------------
-        # LIMPIAR OBSERVACIONES ANTERIORES
+        # NO BORRAR OBSERVACIONES EXISTENTES
+        #
+        # Antes se hacía:
+        #
+        # df["OBSERVACION"] = ""
+        #
+        # Eso podía eliminar información.
         # ------------------------------------------------------
 
-        df["OBSERVACION"] = ""
-
         # ------------------------------------------------------
-        # VALIDACIÓN HACIENDA
+        # VALIDAR HACIENDA
         # ------------------------------------------------------
 
-        df = self._validar_hacienda(df)
+        df = self._validar_hacienda(
+            df
+        )
 
         # ------------------------------------------------------
-        # VALIDACIÓN SUERTE
+        # VALIDAR SUERTE
         # ------------------------------------------------------
 
-        df = self._validar_suerte(df)
+        df = self._validar_suerte(
+            df
+        )
 
         # ------------------------------------------------------
-        # VALIDACIÓN UNIDADES DEL PRODUCTO
+        # VALIDAR UNIDADES
         # ------------------------------------------------------
 
-        df = self._validar_unidades_producto(df)
+        df = self._validar_unidades_producto(
+            df
+        )
 
         # ------------------------------------------------------
-        # VALIDACIÓN ÁREA
+        # VALIDAR ÁREA
         # ------------------------------------------------------
 
-        df = self._validar_area(df)
+        df = self._validar_area(
+            df
+        )
 
         # ------------------------------------------------------
-        # VALIDACIÓN UNIDADES POR HECTÁREA
+        # VALIDAR UNIDADES/HA
         # ------------------------------------------------------
 
-        df = self._validar_unidades_hectarea(df)
+        df = self._validar_unidades_hectarea(
+            df
+        )
 
         # ------------------------------------------------------
-        # PASAR TODOS LOS ERRORES A OBSERVACION
+        # PASAR ERRORES A OBSERVACION
         # ------------------------------------------------------
 
-        df = self._agregar_observaciones(df)
+        df = self._agregar_observaciones(
+            df
+        )
 
         # ------------------------------------------------------
-        # DEVOLVER TABLA DE ERRORES
+        # TABLA DE ERRORES
         # ------------------------------------------------------
 
         return pd.DataFrame(
             self.validador.errores
         )
 
-
     # ==========================================================
-    # VALIDAR CÓDIGO DE HACIENDA
+    # VALIDAR HACIENDA
     # ==========================================================
 
     def _validar_hacienda(self, df):
@@ -1417,11 +1633,9 @@ class Procesador:
 
             return df
 
-        # ------------------------------------------------------
-        # Obtener haciendas válidas del prontuario
-        # ------------------------------------------------------
-
-        prontuario = self.prontuario.df.copy()
+        prontuario = (
+            self.prontuario.df.copy()
+        )
 
         if "HACIENDA" not in prontuario.columns:
 
@@ -1437,10 +1651,6 @@ class Procesador:
 
         )
 
-        # ------------------------------------------------------
-        # Recorrer registros
-        # ------------------------------------------------------
-
         for idx in df.index:
 
             hacienda_original = df.at[
@@ -1448,14 +1658,16 @@ class Procesador:
                 "HACIENDA"
             ]
 
-            # --------------------------------------------------
-            # HACIENDA VACÍA
-            # --------------------------------------------------
-
             if (
+
                 pd.isna(hacienda_original)
+
                 or
-                str(hacienda_original).strip() == ""
+
+                str(
+                    hacienda_original
+                ).strip() == ""
+
             ):
 
                 descripcion = (
@@ -1489,19 +1701,9 @@ class Procesador:
 
                 continue
 
-            # --------------------------------------------------
-            # NORMALIZAR
-            # --------------------------------------------------
-
             hacienda = str(
                 hacienda_original
             ).strip().upper()
-
-            # --------------------------------------------------
-            # VALIDAR FORMATO
-            #
-            # Hacienda debe tener 6 dígitos
-            # --------------------------------------------------
 
             if not re.fullmatch(
                 r"\d{6}",
@@ -1512,8 +1714,7 @@ class Procesador:
 
                     f"Código de Hacienda inválido: "
                     f"'{hacienda}'. "
-                    f"Debe contener exactamente "
-                    f"6 dígitos."
+                    f"Debe contener exactamente 6 dígitos."
 
                 )
 
@@ -1543,10 +1744,6 @@ class Procesador:
                 )
 
                 continue
-
-            # --------------------------------------------------
-            # VALIDAR EXISTENCIA EN PRONTUARIO
-            # --------------------------------------------------
 
             if hacienda not in haciendas_prontuario:
 
@@ -1585,7 +1782,6 @@ class Procesador:
 
         return df
 
-
     # ==========================================================
     # VALIDAR SUERTE
     # ==========================================================
@@ -1596,26 +1792,19 @@ class Procesador:
 
             return df
 
-        # ------------------------------------------------------
-        # Verificar prontuario
-        # ------------------------------------------------------
-
-        prontuario = self.prontuario.df.copy()
-
-        tiene_prontuario = (
-            "HACIENDA" in prontuario.columns
-            and
-            "SUERTE" in prontuario.columns
+        prontuario = (
+            self.prontuario.df.copy()
         )
 
-        # ------------------------------------------------------
-        # Crear conjunto de combinaciones válidas
-        #
-        # Ejemplo:
-        #
-        # 201020 | 001
-        # 201020 | 002A
-        # ------------------------------------------------------
+        tiene_prontuario = (
+
+            "HACIENDA" in prontuario.columns
+
+            and
+
+            "SUERTE" in prontuario.columns
+
+        )
 
         combinaciones_validas = set()
 
@@ -1632,9 +1821,13 @@ class Procesador:
                 )
 
                 if (
+
                     pd.isna(hacienda)
+
                     or
+
                     pd.isna(suerte)
+
                 ):
 
                     continue
@@ -1656,10 +1849,6 @@ class Procesador:
 
                 )
 
-        # ------------------------------------------------------
-        # RECORRER REGISTROS
-        # ------------------------------------------------------
-
         for idx in df.index:
 
             suerte_original = df.at[
@@ -1672,14 +1861,16 @@ class Procesador:
                 "HACIENDA"
             ]
 
-            # --------------------------------------------------
-            # SUERTE VACÍA
-            # --------------------------------------------------
-
             if (
+
                 pd.isna(suerte_original)
+
                 or
-                str(suerte_original).strip() == ""
+
+                str(
+                    suerte_original
+                ).strip() == ""
+
             ):
 
                 descripcion = (
@@ -1713,10 +1904,6 @@ class Procesador:
 
                 continue
 
-            # --------------------------------------------------
-            # NORMALIZAR
-            # --------------------------------------------------
-
             suerte = str(
                 suerte_original
             ).strip().upper()
@@ -1724,23 +1911,6 @@ class Procesador:
             hacienda = str(
                 hacienda_original
             ).strip().upper()
-
-            # --------------------------------------------------
-            # VALIDAR FORMATO
-            #
-            # Permitidos:
-            #
-            # 001
-            # 025
-            # 123
-            # 001A
-            # 025B
-            #
-            # Es decir:
-            # 3 números
-            # o
-            # 3 números + una letra
-            # --------------------------------------------------
 
             if not re.fullmatch(
                 r"\d{3}[A-Z]?",
@@ -1783,25 +1953,24 @@ class Procesador:
 
                 continue
 
-            # --------------------------------------------------
-            # VALIDAR QUE HACIENDA + SUERTE EXISTAN
-            # EN PRONTUARIO
-            #
-            # Solo si Hacienda tiene formato válido.
-            # --------------------------------------------------
-
             if (
+
                 re.fullmatch(
                     r"\d{6}",
                     hacienda
                 )
+
                 and
+
                 tiene_prontuario
+
             ):
 
                 combinacion = (
+
                     hacienda,
                     suerte
+
                 )
 
                 if (
@@ -1844,7 +2013,6 @@ class Procesador:
                     )
 
         return df
-
 
     # ==========================================================
     # VALIDAR UNIDADES DEL PRODUCTO
@@ -1906,11 +2074,6 @@ class Procesador:
 
                 )
 
-                # --------------------------------------------------
-                # Si no registraron unidades,
-                # no hay error.
-                # --------------------------------------------------
-
                 if pd.isna(unidades):
 
                     continue
@@ -1927,11 +2090,6 @@ class Procesador:
                 if pd.isna(porcentaje):
 
                     porcentaje = 0
-
-                # --------------------------------------------------
-                # ERROR:
-                # Producto no contiene elemento
-                # --------------------------------------------------
 
                 if (
 
@@ -1980,7 +2138,6 @@ class Procesador:
 
         return df
 
-
     # ==========================================================
     # VALIDAR ÁREA
     # ==========================================================
@@ -1995,13 +2152,12 @@ class Procesador:
 
         ]
 
-        # ------------------------------------------------------
-        # Verificar columnas
-        # ------------------------------------------------------
-
         if not all(
+
             col in df.columns
+
             for col in columnas
+
         ):
 
             return df
@@ -2026,10 +2182,6 @@ class Procesador:
             errors="coerce"
 
         )
-
-        # ------------------------------------------------------
-        # Solo validar cuando existen los tres valores
-        # ------------------------------------------------------
 
         mascara_base = (
 
@@ -2074,10 +2226,6 @@ class Procesador:
 
         ).abs()
 
-        # ------------------------------------------------------
-        # Tolerancia de 0.01 ha
-        # ------------------------------------------------------
-
         mascara_error = (
 
             mascara_base
@@ -2089,10 +2237,6 @@ class Procesador:
             )
 
         )
-
-        # ------------------------------------------------------
-        # Registrar errores
-        # ------------------------------------------------------
 
         for idx in df.index[
             mascara_error
@@ -2139,45 +2283,30 @@ class Procesador:
 
         return df
 
-
     # ==========================================================
     # VALIDAR UNIDADES POR HECTÁREA
     # ==========================================================
 
     def _validar_unidades_hectarea(self, df):
 
-        # ------------------------------------------------------
-        # RANGOS PERMITIDOS
-        # ------------------------------------------------------
-
         rangos = {
 
             "N": {
-
                 "min": 140,
                 "max": 180
-
             },
 
             "P": {
-
                 "min": 25,
                 "max": 50
-
             },
 
             "K": {
-
                 "min": 30,
                 "max": 90
-
             }
 
         }
-
-        # ------------------------------------------------------
-        # Verificar área
-        # ------------------------------------------------------
 
         if "AREA" not in df.columns:
 
@@ -2190,87 +2319,55 @@ class Procesador:
 
         )
 
-        # ------------------------------------------------------
-        # Recorrer registros
-        # ------------------------------------------------------
-
         for idx in df.index:
 
             area_valor = area.loc[idx]
-
-            # --------------------------------------------------
-            # No podemos calcular si no hay área
-            # --------------------------------------------------
 
             if pd.isna(area_valor):
 
                 continue
 
-            # --------------------------------------------------
-            # Evitar división por cero
-            # --------------------------------------------------
-
             if area_valor == 0:
 
                 continue
 
-            # --------------------------------------------------
-            # Revisar N, P y K
-            # --------------------------------------------------
-
             for elemento, rango in rangos.items():
 
-                columna = (
-                    f"UNIDADES - {elemento}"
+                # --------------------------------------------------
+                # IMPORTANTE:
+                # Usar directamente la columna calculada
+                # UNIDADES/HA.
+                # --------------------------------------------------
+
+                columna_unidades_ha = (
+
+                    f"UNIDADES/HA - {elemento}"
+
                 )
 
-                if columna not in df.columns:
+                if (
+                    columna_unidades_ha
+                    not in df.columns
+                ):
 
                     continue
 
-                # --------------------------------------------------
-                # Tomar el VALOR FINAL de unidades
-                # --------------------------------------------------
-
-                unidades = Calculos.numero(
+                unidades_ha = Calculos.numero(
 
                     df.at[
                         idx,
-                        columna
+                        columna_unidades_ha
                     ]
 
                 )
 
-                if pd.isna(unidades):
+                if pd.isna(unidades_ha):
 
                     continue
-
-                # --------------------------------------------------
-                # CALCULAR UNIDADES / HA
-                # --------------------------------------------------
-
-                unidades_ha = (
-
-                    unidades
-                    /
-                    area_valor
-
-                )
-
-                unidades_ha = round(
-
-                    unidades_ha,
-                    2
-
-                )
 
                 minimo = rango["min"]
 
                 maximo = rango["max"]
-
-                # --------------------------------------------------
-                # VALIDAR RANGO
-                # --------------------------------------------------
 
                 if (
 
@@ -2301,11 +2398,9 @@ class Procesador:
 
                         fila=idx + 2,
 
-                        campo=(
-                            f"UNIDADES - {elemento}"
-                        ),
+                        campo=columna_unidades_ha,
 
-                        valor=unidades,
+                        valor=unidades_ha,
 
                         descripcion=descripcion
 
@@ -2321,7 +2416,6 @@ class Procesador:
 
         return df
 
-
     # ==========================================================
     # AGREGAR TODAS LAS OBSERVACIONES
     # ==========================================================
@@ -2329,7 +2423,7 @@ class Procesador:
     def _agregar_observaciones(self, df):
 
         # ------------------------------------------------------
-        # Crear columna
+        # Asegurar OBSERVACION
         # ------------------------------------------------------
 
         if "OBSERVACION" not in df.columns:
@@ -2347,7 +2441,7 @@ class Procesador:
             )
 
         # ------------------------------------------------------
-        # Recorrer todos los errores
+        # Agregar errores
         # ------------------------------------------------------
 
         for error in self.validador.errores:
@@ -2390,10 +2484,6 @@ class Procesador:
 
             try:
 
-                # --------------------------------------------------
-                # Los errores se registran como idx + 2
-                # --------------------------------------------------
-
                 indice = (
                     int(fila) - 2
                 )
@@ -2411,10 +2501,6 @@ class Procesador:
 
                 )
 
-                # --------------------------------------------------
-                # Primera observación
-                # --------------------------------------------------
-
                 if observacion_actual in [
 
                     "",
@@ -2424,19 +2510,11 @@ class Procesador:
                 ]:
 
                     df.at[
-
                         indice,
                         "OBSERVACION"
-
                     ] = descripcion
 
-                # --------------------------------------------------
-                # Agregar observación sin borrar las anteriores
-                # --------------------------------------------------
-
                 else:
-
-                    # Evitar duplicados exactos
 
                     observaciones_existentes = (
 
@@ -2446,18 +2524,14 @@ class Procesador:
                     )
 
                     if (
-
                         descripcion
                         not in
                         observaciones_existentes
-
                     ):
 
                         df.at[
-
                             indice,
                             "OBSERVACION"
-
                         ] = (
 
                             observacion_actual
@@ -2471,11 +2545,8 @@ class Procesador:
                 continue
 
         # ------------------------------------------------------
-        # Estado final
+        # Determinar estado
         # ------------------------------------------------------
-
-        # Si existe al menos una observación,
-        # el registro queda como ERROR.
 
         mascara_con_error = (
 
@@ -2493,13 +2564,7 @@ class Procesador:
         ] = "ERROR"
 
         # ------------------------------------------------------
-        # IMPORTANTE:
-        #
-        # Si tu aplicación utiliza OBSERVACIONES en vez de
-        # OBSERVACION, mantenemos una copia.
-        #
-        # Esto evita que desaparezcan las observaciones del
-        # visual si algún módulo antiguo todavía usa ese nombre.
+        # Mantener ambas variantes
         # ------------------------------------------------------
 
         df["OBSERVACIONES"] = (
@@ -2507,4 +2572,3 @@ class Procesador:
         )
 
         return df
-    
