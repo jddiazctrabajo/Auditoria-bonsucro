@@ -1204,6 +1204,7 @@ class Procesador:
         self.validador.validar_suerte(df)
 
         df = self._validar_unidades_producto(df)
+        df = self._agregar_observaciones(df)
 
         # ------------------------------------------------------
         # Validar AREA
@@ -1442,3 +1443,61 @@ class Procesador:
                     )
     
         return df
+        def _agregar_observaciones(self, df):
+
+            # Crear columna si no existe
+            if "OBSERVACION" not in df.columns:
+                df["OBSERVACION"] = ""
+        
+            # Recorrer errores encontrados
+            for error in self.validador.errores:
+        
+                fila = error.get("fila")
+        
+                descripcion = (
+                    error.get("descripcion")
+                    or error.get("DESCRIPCION")
+                    or error.get("ERROR")
+                    or ""
+                )
+        
+                if not descripcion:
+                    continue
+        
+                # La fila registrada normalmente es idx + 2
+                if fila is None:
+                    continue
+        
+                try:
+        
+                    indice = int(fila) - 2
+        
+                    if indice not in df.index:
+                        continue
+        
+                    observacion_actual = str(
+                        df.at[indice, "OBSERVACION"]
+                    )
+        
+                    if observacion_actual in ["", "nan", "None"]:
+        
+                        df.at[
+                            indice,
+                            "OBSERVACION"
+                        ] = descripcion
+        
+                    else:
+        
+                        df.at[
+                            indice,
+                            "OBSERVACION"
+                        ] = (
+                            observacion_actual
+                            + " | "
+                            + descripcion
+                        )
+        
+                except Exception:
+                    continue
+        
+            return df
