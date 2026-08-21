@@ -165,7 +165,8 @@ COLUMNAS_ESPERADAS = [
     "UNIDADES - N",
     "UNIDADES - P",
     "UNIDADES - K",
-    "MENORES"
+    "MENORES",
+    "OBSERVACIONES"
 ]
 
 
