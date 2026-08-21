@@ -1219,7 +1219,7 @@ class Procesador:
         # VALIDACIÓN HACIENDA
         # ------------------------------------------------------
 
-        self.validador.validar_hacienda(df)
+        df = self._validar_hacienda(df)
 
         # ------------------------------------------------------
         # VALIDACIÓN SUERTE
@@ -1232,6 +1232,182 @@ class Procesador:
         # ------------------------------------------------------
 
         df = self._validar_unidades_producto(df)
+
+            # ==========================================================
+    # Validar código de Hacienda
+    # ==========================================================
+
+    def _validar_hacienda(self, df):
+
+        # ------------------------------------------------------
+        # Verificar que exista la columna
+        # ------------------------------------------------------
+
+        if "HACIENDA" not in df.columns:
+            return df
+
+        # ------------------------------------------------------
+        # Obtener haciendas válidas del prontuario
+        # ------------------------------------------------------
+
+        prontuario = self.prontuario.df.copy()
+
+        if "HACIENDA" not in prontuario.columns:
+
+            return df
+
+        haciendas_prontuario = set(
+
+            prontuario["HACIENDA"]
+            .dropna()
+            .astype(str)
+            .str.strip()
+            .str.upper()
+
+        )
+
+        # ------------------------------------------------------
+        # Recorrer registros
+        # ------------------------------------------------------
+
+        for idx in df.index:
+
+            hacienda = df.at[
+                idx,
+                "HACIENDA"
+            ]
+
+            # --------------------------------------------------
+            # Hacienda vacía
+            # --------------------------------------------------
+
+            if pd.isna(hacienda) or str(hacienda).strip() == "":
+
+                descripcion = (
+                    "Código de Hacienda vacío."
+                )
+
+                self.validador.registrar_error(
+
+                    archivo=df.at[
+                        idx,
+                        "ARCHIVO_ORIGEN"
+                    ],
+
+                    fila=idx + 2,
+
+                    campo="HACIENDA",
+
+                    valor=hacienda,
+
+                    descripcion=descripcion
+
+                )
+
+                df = self.validador.marcar_error(
+
+                    df,
+                    idx,
+                    descripcion
+
+                )
+
+                continue
+
+            # --------------------------------------------------
+            # Normalizar código
+            # --------------------------------------------------
+
+            hacienda = str(
+                hacienda
+            ).strip().upper()
+
+            # --------------------------------------------------
+            # Validar longitud
+            #
+            # Hacienda = 6 dígitos
+            # --------------------------------------------------
+
+            if not re.fullmatch(
+                r"\d{6}",
+                hacienda
+            ):
+
+                descripcion = (
+
+                    f"Código de Hacienda inválido: "
+                    f"'{hacienda}'. "
+                    f"Debe contener 6 dígitos."
+
+                )
+
+                self.validador.registrar_error(
+
+                    archivo=df.at[
+                        idx,
+                        "ARCHIVO_ORIGEN"
+                    ],
+
+                    fila=idx + 2,
+
+                    campo="HACIENDA",
+
+                    valor=hacienda,
+
+                    descripcion=descripcion
+
+                )
+
+                df = self.validador.marcar_error(
+
+                    df,
+                    idx,
+                    descripcion
+
+                )
+
+                continue
+
+            # --------------------------------------------------
+            # Validar existencia en prontuario
+            # --------------------------------------------------
+
+            if hacienda not in haciendas_prontuario:
+
+                descripcion = (
+
+                    f"El código de Hacienda "
+                    f"'{hacienda}' no existe "
+                    f"en el prontuario."
+
+                )
+
+                self.validador.registrar_error(
+
+                    archivo=df.at[
+                        idx,
+                        "ARCHIVO_ORIGEN"
+                    ],
+
+                    fila=idx + 2,
+
+                    campo="HACIENDA",
+
+                    valor=hacienda,
+
+                    descripcion=descripcion
+
+                )
+
+                df = self.validador.marcar_error(
+
+                    df,
+                    idx,
+                    descripcion
+
+                )
+
+        return df
 
         # ------------------------------------------------------
         # VALIDACIÓN ÁREA
