@@ -880,6 +880,133 @@ class Procesador:
         return df
 
     # ==========================================================
+    # CALCULAR UNIDADES POR HECTÁREA
+    # ==========================================================
+
+    def _calcular_unidades_hectarea(self, df):
+
+        print(
+            "\n=============================="
+        )
+
+        print(
+            "INICIO _calcular_unidades_hectarea"
+        )
+
+        print(
+            "=============================="
+        )
+
+        elementos = [
+            "N",
+            "P",
+            "K",
+            "S",
+            "MENORES"
+        ]
+
+        # ------------------------------------------------------
+        # Verificar AREA
+        # ------------------------------------------------------
+
+        if "AREA" not in df.columns:
+
+            print(
+                "No existe AREA. "
+                "No se pueden calcular unidades/ha."
+            )
+
+            return df
+
+        # ------------------------------------------------------
+        # Convertir AREA a numérico
+        # ------------------------------------------------------
+
+        area = pd.to_numeric(
+            df["AREA"],
+            errors="coerce"
+        )
+
+        # ------------------------------------------------------
+        # Calcular cada elemento
+        # ------------------------------------------------------
+
+        for elemento in elementos:
+
+            columna_unidades = (
+                f"UNIDADES - {elemento}"
+            )
+
+            columna_unidades_ha = (
+                f"UNIDADES/HA - {elemento}"
+            )
+
+            # --------------------------------------------------
+            # Crear columna de salida
+            # --------------------------------------------------
+
+            if columna_unidades_ha not in df.columns:
+
+                df[columna_unidades_ha] = pd.NA
+
+            # --------------------------------------------------
+            # Si no existe la columna de unidades
+            # --------------------------------------------------
+
+            if columna_unidades not in df.columns:
+
+                continue
+
+            unidades = pd.to_numeric(
+                df[columna_unidades],
+                errors="coerce"
+            )
+
+            # --------------------------------------------------
+            # Condiciones para calcular
+            # --------------------------------------------------
+
+            mascara = (
+
+                unidades.notna()
+
+                & area.notna()
+
+                & (area > 0)
+
+            )
+
+            # --------------------------------------------------
+            # Calcular unidades / hectárea
+            # --------------------------------------------------
+
+            df.loc[
+                mascara,
+                columna_unidades_ha
+            ] = (
+
+                unidades.loc[mascara]
+                /
+                area.loc[mascara]
+
+            ).round(2)
+
+            print(
+                f"{columna_unidades_ha}: "
+                f"{mascara.sum()} calculados"
+            )
+
+        print(
+            "FIN _calcular_unidades_hectarea"
+        )
+
+        print(
+            "==============================\n"
+        )
+
+        return df
+    
+    # ==========================================================
     # Calcular Producto a partir de unidades suministradas
     # ==========================================================
 
