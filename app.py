@@ -292,11 +292,14 @@ def _ejecutar_procesador(carpeta):
 
     # OBSERVACION es la columna principal generada
     # por Procesador._agregar_observaciones()
-
+    # -------------------------------------------------------
+    # OBSERVACION
+    # -------------------------------------------------------
+    
     if "OBSERVACION" not in df_consolidado.columns:
-
+    
         df_consolidado["OBSERVACION"] = ""
-
+    
     else:
     
         df_consolidado["OBSERVACION"] = (
