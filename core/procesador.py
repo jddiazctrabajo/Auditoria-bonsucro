@@ -1216,15 +1216,17 @@ class Procesador:
 
         return df
 
+
     # ==========================================================
     # VALIDAR INFORMACIÓN
     # ==========================================================
+
     def _validar(self, df):
-    
+
         # ======================================================
         # ASEGURAR COLUMNAS
         # ======================================================
-    
+
         if "ESTADO" not in df.columns:
             df["ESTADO"] = "OK"
         else:
@@ -1233,7 +1235,7 @@ class Procesador:
                 .fillna("OK")
                 .astype(str)
             )
-    
+
         if "OBSERVACION" not in df.columns:
             df["OBSERVACION"] = ""
         else:
@@ -1242,41 +1244,29 @@ class Procesador:
                 .fillna("")
                 .astype(str)
             )
-    
+
+        if "OBSERVACIONES" not in df.columns:
+            df["OBSERVACIONES"] = ""
+        else:
+            df["OBSERVACIONES"] = (
+                df["OBSERVACIONES"]
+                .fillna("")
+                .astype(str)
+            )
+
         # ======================================================
-        # LIMPIAR ERRORES ANTERIORES
+        # LIMPIAR RESULTADOS ANTERIORES
         # ======================================================
-    
+
         self.validador.errores = []
-    
+
         df["OBSERVACION"] = ""
+        df["OBSERVACIONES"] = ""
         df["ESTADO"] = "OK"
 
-    # ======================================================
-    # VALIDACIONES
-    # ======================================================
-
-    df = self._validar_hacienda(df)
-
-    df = self._validar_suerte(df)
-
-    df = self._validar_unidades_producto(df)
-
-    df = self._validar_area(df)
-
-    df = self._validar_unidades_hectarea(df)
-
-    # ======================================================
-    # PASAR ERRORES A OBSERVACIONES
-    # ======================================================
-
-    df = self._agregar_observaciones(df)
-
-    return df
-
-        # ------------------------------------------------------
+        # ======================================================
         # VALIDACIONES
-        # ------------------------------------------------------
+        # ======================================================
 
         df = self._validar_hacienda(df)
 
@@ -1288,19 +1278,21 @@ class Procesador:
 
         df = self._validar_unidades_hectarea(df)
 
-        # ------------------------------------------------------
-        # PASAR ERRORES A OBSERVACION
-        # ------------------------------------------------------
+        # ======================================================
+        # PASAR ERRORES A LAS FILAS
+        # ======================================================
 
         df = self._agregar_observaciones(df)
 
-        # ------------------------------------------------------
+        # ======================================================
         # TABLA DE ERRORES
-        # ------------------------------------------------------
+        # ======================================================
 
-        return pd.DataFrame(
+        errores = pd.DataFrame(
             self.validador.errores
         )
+
+        return errores
 
     # ==========================================================
     # VALIDAR HACIENDA
